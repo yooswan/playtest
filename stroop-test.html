@@ -387,7 +387,7 @@
       </div>
 
       <button id="stroop-btn-restart">🔄 다시하기</button>
-      <button id="stroop-btn-copy">📋 결과 복사</button>
+      <button id="stroop-btn-copy" type="button">📋 결과 복사</button>
       <div id="stroop-copy-toast" class="stroop-toast">✓ 클립보드에 복사되었습니다</div>
     </div>
 
@@ -449,6 +449,10 @@
   function startTest() {
     trials = buildTrials();
     currentIdx = 0; results = []; locked = false; resultData = null;
+    // copy button only valid after a result exists
+    var copyBtn = document.getElementById('stroop-btn-copy');
+    if (copyBtn) copyBtn.disabled = true;
+
     var timerEl = document.getElementById('stroop-timer');
     timerEl.textContent = '0.0s';
     timerEl.classList.remove('stroop-timer-warn');
@@ -557,6 +561,9 @@
     }, 80);
 
     resultData = { totalAcc:totalAcc, avgRt:avgRt, conRt:conRt, incRt:incRt, conAcc:conAcc, incAcc:incAcc, effect:effect, gradeTitle:gradeTitle, gradeEmoji:gradeEmoji };
+    // enable copy button now that we have a result
+    var copyBtn = document.getElementById('stroop-btn-copy');
+    if (copyBtn) copyBtn.disabled = false;
 
     // 벤치마크 업데이트
     function setBench(valId, badgeId, value, unit, goodThresh, avgThresh, lowerIsBetter) {
@@ -587,7 +594,18 @@
       setTimeout(function(){ el.classList.remove('stroop-visible'); }, 2500);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(doToast);
+      navigator.clipboard.writeText(text).then(doToast).catch(function(err) {
+        // Clipboard API failed despite being available, fallback to legacy method
+        console.error('clipboard.writeText failed:', err);
+        var ta2 = document.createElement('textarea');
+        ta2.value = text;
+        ta2.setAttribute('style','position:fixed;top:-999px;left:-999px;opacity:0;');
+        document.body.appendChild(ta2);
+        ta2.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta2);
+        doToast();
+      });
     } else {
       var ta = document.createElement('textarea');
       ta.value = text;
@@ -617,7 +635,9 @@
   });
   document.getElementById('stroop-btn-copy').addEventListener('click', function(){
     if (!resultData) return;
-    copyToClipboard(getResultText(), 'stroop-copy-toast');
+    var text = getResultText();
+    if (!text) return;
+    copyToClipboard(text, 'stroop-copy-toast');
   });
 
   setInterval(function() {
