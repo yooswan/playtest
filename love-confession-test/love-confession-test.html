@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>고백 성공률 예측 테스트 💘</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --rose-50: #fff1f2;
+  --rose-100: #ffe4e6;
+  --rose-200: #fecdd3;
+  --rose-300: #fda4af;
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+  --rose-600: #e11d48;
+  --coral: #ff6b6b;
+  --peach: #ffb4a2;
+  --cream: #fff5f0;
+  --warm-gray: #6b5b5b;
+  --light-gray: #f8f4f4;
+  --card-shadow: 0 8px 32px rgba(244, 63, 94, 0.10), 0 2px 8px rgba(0,0,0,0.04);
+  --btn-shadow: 0 4px 16px rgba(244, 63, 94, 0.18);
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--cream);
+  color: #3d2c2c;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+}
+
+.app {
+  width: 100%;
+  max-width: 460px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(170deg, #fff5f5 0%, #fff0f3 30%, #fce7f3 70%, #fdf2f8 100%);
+}
+
+/* ── Decorative floating hearts ── */
+.floating-hearts {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.floating-hearts span {
+  position: absolute;
+  font-size: 18px;
+  opacity: 0.12;
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.12; }
+  90% { opacity: 0.12; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+
+/* ── Screens ── */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px;
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.45s ease;
+}
+
+.screen.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Intro Screen ── */
+.intro-screen {
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  text-align: center;
+  gap: 20px;
+}
+
+.intro-icon {
+  font-size: 72px;
+  animation: heartbeat 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(244,63,94,0.25));
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  60% { transform: scale(1); }
+}
+
+.intro-title {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.35;
+  background: linear-gradient(135deg, var(--rose-500), var(--rose-400), var(--coral));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.intro-desc {
+  font-size: 15px;
+  color: var(--warm-gray);
+  line-height: 1.65;
+  max-width: 320px;
+  word-break: keep-all;
+}
+
+.btn-start {
+  margin-top: 12px;
+  padding: 16px 52px;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  border: none;
+  border-radius: 60px;
+  background: linear-gradient(135deg, var(--rose-500), var(--coral));
+  box-shadow: var(--btn-shadow);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-start:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(244,63,94,0.15);
+}
+
+/* ── Quiz Screen ── */
+.quiz-screen {
+  padding-top: 24px;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.progress-wrapper {
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.progress-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rose-400);
+}
+
+.progress-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #b09a9a;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--rose-100);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--rose-400), var(--coral));
+  border-radius: 100px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.question-card {
+  width: 100%;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 28px 22px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(255,255,255,0.6);
+  animation: cardIn 0.4s ease;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.question-number {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rose-400);
+  background: var(--rose-50);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.question-text {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #2d1f1f;
+  margin-bottom: 22px;
+  word-break: keep-all;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-btn {
+  width: 100%;
+  padding: 15px 18px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.55;
+  text-align: left;
+  color: #3d2c2c;
+  background: var(--light-gray);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  word-break: keep-all;
+}
+
+.option-btn:active {
+  transform: scale(0.98);
+}
+
+.option-btn.selected {
+  background: var(--rose-50);
+  border-color: var(--rose-300);
+  color: var(--rose-600);
+  font-weight: 700;
+}
+
+/* ── Loading Screen ── */
+.loading-screen {
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  text-align: center;
+  gap: 28px;
+}
+
+.loading-heart {
+  font-size: 64px;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { transform: scale(0.9); opacity: 0.7; }
+  to { transform: scale(1.1); opacity: 1; }
+}
+
+.loading-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+.loading-sub {
+  font-size: 14px;
+  color: #b09a9a;
+  margin-top: -16px;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4,end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* ── Result Screen ── */
+.result-screen {
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  text-align: center;
+  gap: 8px;
+}
+
+.result-card {
+  width: 100%;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 28px;
+  padding: 36px 24px 32px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(255,255,255,0.6);
+  animation: resultPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes resultPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.result-emoji {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.result-grade {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.result-percent-wrapper {
+  margin: 12px 0 20px;
+}
+
+.result-percent {
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.result-percent-sign {
+  font-size: 28px;
+  font-weight: 700;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+.result-message {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--warm-gray);
+  margin: 0 auto 28px;
+  max-width: 320px;
+  word-break: keep-all;
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-retry, .btn-share {
+  width: 100%;
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 60px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  border: none;
+}
+
+.btn-retry {
+  color: #fff;
+  background: linear-gradient(135deg, var(--rose-500), var(--coral));
+  box-shadow: var(--btn-shadow);
+}
+
+.btn-share {
+  color: var(--rose-500);
+  background: var(--rose-50);
+  border: 2px solid var(--rose-200);
+}
+
+.btn-retry:active, .btn-share:active {
+  transform: scale(0.96);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #2d1f1f;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 60px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.35s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Grade color themes ── */
+.grade-s .result-percent { color: var(--rose-500); }
+.grade-s .result-grade { background: var(--rose-50); color: var(--rose-500); }
+
+.grade-a .result-percent { color: #e8734a; }
+.grade-a .result-grade { background: #fff3ee; color: #e8734a; }
+
+.grade-b .result-percent { color: #d4a017; }
+.grade-b .result-grade { background: #fdf8e8; color: #b8900f; }
+
+.grade-c .result-percent { color: #8e9aaf; }
+.grade-c .result-grade { background: #f0f2f5; color: #6b7a8d; }
+
+/* ── Confetti canvas ── */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Responsive fine-tuning ── */
+@media (max-width: 360px) {
+  .intro-title { font-size: 22px; }
+  .question-text { font-size: 16px; }
+  .option-btn { font-size: 13.5px; padding: 13px 15px; }
+  .result-percent { font-size: 54px; }
+}
+
+@media (min-width: 461px) {
+  .app {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Floating Hearts Background -->
+  <div class="floating-hearts" id="floatingHearts"></div>
+
+  <!-- ====== INTRO ====== -->
+  <div class="screen intro-screen active" id="introScreen">
+    <div class="intro-icon">💘</div>
+    <h1 class="intro-title">고백 성공률<br>예측 테스트</h1>
+    <p class="intro-desc">
+      상대방과의 평소 관계와 분위기를 떠올리며<br>
+      10가지 질문에 솔직하게 답해보세요!
+    </p>
+    <button class="btn-start" id="btnStart" onclick="startQuiz()">시작하기 →</button>
+  </div>
+
+  <!-- ====== QUIZ ====== -->
+  <div class="screen quiz-screen" id="quizScreen">
+    <div class="progress-wrapper">
+      <div class="progress-top">
+        <span class="progress-label" id="progressLabel">Q1</span>
+        <span class="progress-count" id="progressCount">1 / 10</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+    <div class="question-card" id="questionCard">
+      <span class="question-number" id="questionNumber">질문 1</span>
+      <p class="question-text" id="questionText"></p>
+      <div class="options" id="optionsContainer"></div>
+    </div>
+  </div>
+
+  <!-- ====== LOADING ====== -->
+  <div class="screen loading-screen" id="loadingScreen">
+    <div class="loading-heart">💗</div>
+    <p class="loading-text">두 사람의 온도를 분석 중<span class="loading-dots"></span></p>
+    <p class="loading-sub">잠시만 기다려주세요</p>
+  </div>
+
+  <!-- ====== RESULT ====== -->
+  <div class="screen result-screen" id="resultScreen">
+    <div class="result-card" id="resultCard">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-grade" id="resultGrade"></div>
+      <div class="result-percent-wrapper">
+        <span class="result-percent" id="resultPercent">0</span><span class="result-percent-sign" id="resultPercentSign">%</span>
+      </div>
+      <p class="result-message" id="resultMessage"></p>
+      <div class="result-actions">
+        <button class="btn-retry" onclick="resetQuiz()">다시 테스트하기</button>
+        <button class="btn-share" onclick="shareResult()">결과 공유하기 📋</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<script>
+// ── Quiz Data ──
+const questions = [
+  {
+    q: "최근 두 달 사이, 상대방이 먼저 당신에게 개인적인 연락을 한 적이 있나요?",
+    opts: [
+      "예, 자주 연락이 와요.",
+      "가끔 일상적인 질문을 해요.",
+      "거의 없거나 제가 먼저 해야 답장이 와요.",
+      "업무나 공적인 일로만 연락해요."
+    ]
+  },
+  {
+    q: "둘이서만 따로 만난 적이 있나요? (식사, 커피, 영화 등)",
+    opts: [
+      "이미 여러 번 단둘이 만났어요.",
+      "한두 번 정도 단둘이 본 적이 있어요.",
+      "여럿이서만 만났고, 단둘이는 아직이에요.",
+      "만날 약속을 잡으려 했으나 매번 거절당했어요."
+    ]
+  },
+  {
+    q: "함께 대화할 때 상대방의 리액션은 어떤 편인가요?",
+    opts: [
+      "내 말에 크게 웃어주고 질문도 많이 해요.",
+      "적절히 맞장구치며 경청해 줘요.",
+      "가끔 핸드폰을 보거나 딴청을 피울 때가 있어요.",
+      "단답형이 많고 대화가 금방 끊겨요."
+    ]
+  },
+  {
+    q: "상대방이 당신의 사소한 변화(헤어스타일, 옷차림, 기분 등)를 알아챈 적이 있나요?",
+    opts: [
+      "아주 작은 변화도 바로 알아채고 언급해 줘요.",
+      "가끔 \"오늘 분위기 좀 다르네?\" 정도로 물어봐요.",
+      "말해주기 전까지는 전혀 몰라요.",
+      "나에게 큰 관심이 없어 보여요."
+    ]
+  },
+  {
+    q: "장난스럽게라도 '나 같은 남자/여자 어때?'라고 물었을 때 반응은?",
+    opts: [
+      "\"완전 좋지!\"라며 긍정적으로 답했어요.",
+      "\"갑자기 왜 이래?\"라며 당황해하거나 웃어넘겼어요.",
+      "\"너는 그냥 좋은 친구지\"라고 선을 그었어요.",
+      "무시하거나 대화 주제를 바로 돌렸어요."
+    ]
+  },
+  {
+    q: "카카오톡이나 문자 메시지의 답장 속도는 어떤가요?",
+    opts: [
+      "거의 실시간으로 오거나, 늦어도 성의 있게 답장해요.",
+      "바쁠 땐 늦지만 꼬박꼬박 답장을 해줘요.",
+      "읽고 나서 한참 뒤에 답장이 와요.",
+      "읽고 씹거나 답장이 매우 무성의해요."
+    ]
+  },
+  {
+    q: "상대방이 본인의 개인적인 고민이나 집안일 등을 당신에게 털어놓은 적이 있나요?",
+    opts: [
+      "깊은 속마음까지 공유하는 편이에요.",
+      "가끔 가벼운 고민 정도는 이야기해요.",
+      "주로 즐거운 농담만 주고받아요.",
+      "사적인 이야기는 거의 하지 않아요."
+    ]
+  },
+  {
+    q: "가벼운 스킨십(손 스치기, 어깨 부딪히기 등)이 있었을 때 상대의 반응은?",
+    opts: [
+      "피하지 않고 자연스럽게 받아들여요.",
+      "조금 놀란 듯하지만 싫어하는 기색은 없어요.",
+      "즉각적으로 거리를 두거나 피해요.",
+      "스킨십 자체가 발생할 기회가 전혀 없어요."
+    ]
+  },
+  {
+    q: "상대방이 '연애하고 싶다'거나 '이상형'에 대해 구체적으로 언급한 적이 있나요?",
+    opts: [
+      "내 특징과 비슷한 사람을 이상형으로 말했어요.",
+      "그냥 일반적인 이상형을 이야기한 적이 있어요.",
+      "연애에 관심 없다고 단정 지어 말했어요.",
+      "그런 주제의 대화를 나눠본 적이 없어요."
+    ]
+  },
+  {
+    q: "둘이 있을 때의 전반적인 분위기는 어떠한가요?",
+    opts: [
+      "묘한 긴장감과 설렘이 느껴져요.",
+      "아주 편안하고 즐거운 친구 사이 같아요.",
+      "가끔 어색한 침묵이 흘러요.",
+      "내가 일방적으로 분위기를 띄우려 노력해야 해요."
+    ]
+  }
+];
+
+// ── State ──
+let currentQ = 0;
+let scores = [];
+let finalPercent = 0;
+
+// ── DOM refs ──
+const $ = id => document.getElementById(id);
+
+// ── Floating Hearts ──
+function createFloatingHearts() {
+  const container = $('floatingHearts');
+  const hearts = ['💕', '💗', '💘', '❤️', '🩷', '🤍', '💛'];
+  for (let i = 0; i < 12; i++) {
+    const span = document.createElement('span');
+    span.textContent = hearts[i % hearts.length];
+    span.style.left = Math.random() * 100 + '%';
+    span.style.fontSize = (14 + Math.random() * 14) + 'px';
+    span.style.animationDuration = (10 + Math.random() * 15) + 's';
+    span.style.animationDelay = (Math.random() * 12) + 's';
+    container.appendChild(span);
+  }
+}
+
+// ── Screen management ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+// ── Start Quiz ──
+function startQuiz() {
+  currentQ = 0;
+  scores = [];
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+// ── Render Question ──
+function renderQuestion() {
+  const data = questions[currentQ];
+  const num = currentQ + 1;
+
+  $('progressLabel').textContent = 'Q' + num;
+  $('progressCount').textContent = num + ' / 10';
+  $('progressFill').style.width = (num / 10 * 100) + '%';
+  $('questionNumber').textContent = '질문 ' + num;
+  $('questionText').textContent = data.q;
+
+  // Trigger card animation
+  const card = $('questionCard');
+  card.style.animation = 'none';
+  card.offsetHeight; // reflow
+  card.style.animation = '';
+
+  const container = $('optionsContainer');
+  container.innerHTML = '';
+
+  data.opts.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectOption(btn, idx);
+    container.appendChild(btn);
+  });
+}
+
+// ── Select Option ──
+function selectOption(btn, idx) {
+  // Prevent double-tap
+  const allBtns = btn.parentElement.querySelectorAll('.option-btn');
+  allBtns.forEach(b => { b.onclick = null; });
+
+  btn.classList.add('selected');
+  // Score: first option = 3, last = 0
+  scores.push(3 - idx);
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion();
+    } else {
+      showLoading();
+    }
+  }, 380);
+}
+
+// ── Loading ──
+function showLoading() {
+  showScreen('loadingScreen');
+  setTimeout(showResult, 2600);
+}
+
+// ── Calculate & Show Result ──
+function showResult() {
+  const totalScore = scores.reduce((a, b) => a + b, 0);
+  const maxScore = 30;
+
+  let grade, emoji, gradeText, gradeClass, message;
+
+  if (totalScore >= 24) {
+    gradeClass = 'grade-s';
+    emoji = '💕';
+    gradeText = '거의 확실해요!';
+    finalPercent = 85 + Math.round((totalScore - 24) / 6 * 15);
+    message = '이미 서로 좋은 감정이 오가고 있어요!\n지금이 바로 용기를 낼 타이밍입니다.\n당신의 고백, 충분히 성공할 수 있어요.';
+  } else if (totalScore >= 16) {
+    gradeClass = 'grade-a';
+    emoji = '💗';
+    gradeText = '가능성 충분해요!';
+    finalPercent = 55 + Math.round((totalScore - 16) / 8 * 30);
+    message = '상대방도 당신에게 호감이 있을 가능성이 높아요.\n함께하는 시간을 조금 더 만들어보고\n확신이 섰을 때 고백해보세요!';
+  } else if (totalScore >= 8) {
+    gradeClass = 'grade-b';
+    emoji = '💛';
+    gradeText = '조금 더 시간이 필요해요';
+    finalPercent = 25 + Math.round((totalScore - 8) / 8 * 30);
+    message = '아직은 친구로서의 관계가 더 강해 보여요.\n자연스러운 만남과 대화를 늘리면서\n서로를 더 알아가는 시간을 가져보세요.';
+  } else {
+    gradeClass = 'grade-c';
+    emoji = '🤍';
+    gradeText = '아직은 친구로서';
+    finalPercent = 5 + Math.round(totalScore / 8 * 20);
+    message = '상대방과의 관계를 천천히 가꿔나가는 게 좋겠어요.\n먼저 신뢰와 친밀감을 쌓으면\n언젠가 좋은 기회가 올 거예요.';
+  }
+
+  finalPercent = Math.min(99, Math.max(5, finalPercent));
+
+  showScreen('resultScreen');
+
+  const card = $('resultCard');
+  card.className = 'result-card ' + gradeClass;
+
+  $('resultEmoji').textContent = emoji;
+  $('resultGrade').textContent = gradeText;
+  $('resultMessage').textContent = message;
+
+  // Count-up animation
+  animateCounter($('resultPercent'), finalPercent, 1200);
+
+  // Confetti for high scores
+  if (totalScore >= 16) {
+    setTimeout(() => launchConfetti(), 400);
+  }
+
+  // iframe height messaging
+  sendHeightToParent();
+}
+
+// ── Counter Animation ──
+function animateCounter(el, target, duration) {
+  const start = performance.now();
+  function step(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    el.textContent = Math.round(eased * target);
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Reset ──
+function resetQuiz() {
+  currentQ = 0;
+  scores = [];
+  finalPercent = 0;
+  showScreen('introScreen');
+}
+
+// ── Share ──
+function shareResult() {
+  const text = `💘 고백 성공률 예측 테스트 결과: ${finalPercent}%!\n나의 고백 성공 가능성은? 지금 테스트해보세요!`;
+
+  if (navigator.share) {
+    navigator.share({ title: '고백 성공률 예측 테스트', text: text }).catch(() => {
+      copyToClipboard(text);
+    });
+  } else {
+    copyToClipboard(text);
+  }
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('결과가 복사되었어요!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('결과가 복사되었어요!');
+  }
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Confetti ──
+function launchConfetti() {
+  const canvas = $('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = [];
+  const colors = ['#f43f5e','#fb7185','#fda4af','#ff6b6b','#ffb4a2','#fbbf24','#f472b6','#c084fc'];
+
+  for (let i = 0; i < 80; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height * 0.5,
+      w: 6 + Math.random() * 6,
+      h: 4 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 4,
+      rot: Math.random() * 360,
+      rotV: (Math.random() - 0.5) * 8,
+      opacity: 1
+    });
+  }
+
+  let frame = 0;
+  const maxFrames = 160;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
+
+    pieces.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.06;
+      p.rot += p.rotV;
+      if (frame > maxFrames - 40) p.opacity -= 0.025;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.opacity);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+
+    if (frame < maxFrames) {
+      requestAnimationFrame(draw);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  draw();
+}
+
+// ── iframe height message (for Tistory) ──
+function sendHeightToParent() {
+  try {
+    const height = document.querySelector('.app').scrollHeight;
+    window.parent.postMessage({ type: 'resize', height: height }, '*');
+  } catch(e) {}
+}
+
+// ── Init ──
+createFloatingHearts();
+window.addEventListener('resize', () => {
+  sendHeightToParent();
+});
+</script>
+</body>
+</html>
