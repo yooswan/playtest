@@ -823,7 +823,8 @@ function resetQuiz() {
 
 // ── Share ──
 function shareResult() {
-  const text = `💘 고백 성공률 예측 테스트 결과: ${finalPercent}%!\n나의 고백 성공 가능성은? 지금 테스트해보세요!`;
+  const pageUrl = document.referrer || location.href;
+  const text = `💘 고백 성공률 예측 테스트 결과: ${finalPercent}%!\n나의 고백 성공 가능성은? 지금 테스트해보세요!\n${pageUrl}`;
 
   if (navigator.share) {
     navigator.share({ title: '고백 성공률 예측 테스트', text: text }).catch(() => {
@@ -835,9 +836,7 @@ function shareResult() {
 }
 
 function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => showToast('결과가 복사되었어요!'));
-  } else {
+  function execCopy() {
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.cssText = 'position:fixed;opacity:0';
@@ -846,6 +845,14 @@ function copyToClipboard(text) {
     document.execCommand('copy');
     document.body.removeChild(ta);
     showToast('결과가 복사되었어요!');
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('결과가 복사되었어요!'))
+      .catch(() => execCopy());
+  } else {
+    execCopy();
   }
 }
 
