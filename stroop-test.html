@@ -1,0 +1,554 @@
+<!--
+  [Tistory 삽입 주의사항]
+  글쓰기 → 우측 상단 'HTML' 버튼 클릭 → 아래 코드 전체 붙여넣기
+  저장 후 <script> 태그가 제거되었다면: 설정 > 스킨 편집 > html 탭에서
+  </body> 직전에 스크립트만 따로 추가하세요.
+-->
+<div id="stroop-root">
+
+<style>
+  #stroop-root {
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: #f7f8fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    box-sizing: border-box;
+  }
+  #stroop-root * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  #stroop-wrap {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    max-width: 560px;
+    width: 100%;
+    overflow: hidden;
+  }
+  #stroop-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 32px 32px 28px;
+    text-align: center;
+  }
+  #stroop-header-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.75) !important;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  #stroop-header h1 {
+    color: #ffffff !important;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  #stroop-header p {
+    color: rgba(255,255,255,0.6) !important;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  #stroop-body { padding: 32px; }
+  .stroop-screen { display: none; }
+  .stroop-screen.stroop-active { display: block; }
+
+  #stroop-start-desc {
+    background: #f0f4ff;
+    border-left: 4px solid #3d5af1;
+    border-radius: 0 10px 10px 0;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  #stroop-start-desc p { color: #333 !important; font-size: 15px; line-height: 1.8; }
+  #stroop-start-desc p + p { margin-top: 8px; }
+  #stroop-start-desc strong { color: #3d5af1 !important; font-weight: 700; }
+
+  .stroop-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stroop-info-card { background: #f7f8fa; border-radius: 12px; padding: 16px; text-align: center; }
+  .stroop-info-card .stroop-info-num { font-size: 26px; font-weight: 800; color: #1a1a2e !important; line-height: 1; }
+  .stroop-info-card .stroop-info-label { font-size: 13px; color: #888 !important; margin-top: 4px; }
+
+  #stroop-btn-start {
+    display: block; width: 100%;
+    background: linear-gradient(135deg, #3d5af1, #1a1a2e);
+    color: #fff !important; font-size: 17px; font-weight: 700;
+    border: none; border-radius: 12px; padding: 18px;
+    cursor: pointer; letter-spacing: 0.3px;
+    transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+  }
+  #stroop-btn-start:active { transform: scale(0.98); }
+
+  #stroop-top-bar {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+  }
+  #stroop-progress-bar-wrap {
+    flex: 1; background: #eef0f5; border-radius: 8px; height: 8px; overflow: hidden; margin-right: 12px;
+  }
+  #stroop-progress-bar {
+    height: 100%; background: linear-gradient(90deg, #3d5af1, #6c8fff);
+    border-radius: 8px; transition: width 0.35s cubic-bezier(.4,0,.2,1); width: 0%;
+  }
+  #stroop-timer-wrap {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: #fff8ec; border: 1.5px solid #f4a200; border-radius: 20px; padding: 5px 12px 5px 10px;
+  }
+  #stroop-timer-icon {
+    font-size: 13px; line-height: 1;
+  }
+  #stroop-timer {
+    font-size: 14px; font-weight: 800; color: #d48000 !important;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.5px; min-width: 44px; text-align: right;
+  }
+  #stroop-timer.stroop-timer-warn {
+    color: #e63946 !important;
+    animation: stroop-pulse 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes stroop-pulse {
+    from { opacity: 1; } to { opacity: 0.5; }
+  }
+  #stroop-progress-meta {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  #stroop-progress-text { font-size: 13px; color: #aaa !important; }
+  #stroop-progress-text span { color: #3d5af1 !important; font-weight: 700; }
+  #stroop-timer-label { font-size: 12px; color: #ccc !important; }
+
+  #stroop-word-display {
+    text-align: center; margin: 8px 0 28px; min-height: 110px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  }
+  #stroop-type-tag {
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+  }
+  #stroop-word {
+    font-size: clamp(44px, 12vw, 68px); font-weight: 900; letter-spacing: -1px; line-height: 1;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  #stroop-word.stroop-flash { opacity: 0; transform: scale(0.88); }
+  #stroop-word.stroop-show  { opacity: 1; transform: scale(1); }
+
+  #stroop-instruction { font-size: 14px; color: #999 !important; text-align: center; margin-bottom: 20px; }
+  #stroop-instruction strong { color: #555 !important; }
+
+  #stroop-color-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stroop-color-btn {
+    border: none; border-radius: 14px; padding: 18px 12px;
+    font-size: 17px; font-weight: 800; color: #fff !important;
+    cursor: pointer; min-height: 58px; letter-spacing: 0.5px;
+    transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+    position: relative; overflow: hidden;
+  }
+  .stroop-color-btn:active { transform: scale(0.95); }
+  .stroop-color-btn[data-color="빨강"] { background: #e63946 !important; }
+  .stroop-color-btn[data-color="파랑"] { background: #3d5af1 !important; }
+  .stroop-color-btn[data-color="초록"] { background: #2a9d5c !important; }
+  .stroop-color-btn[data-color="노랑"] { background: #f4a200 !important; }
+
+  .stroop-color-btn.stroop-correct::after {
+    content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff !important; background: rgba(255,255,255,0.25); border-radius: 14px;
+    animation: stroop-pop 0.3s ease-out forwards;
+  }
+  .stroop-color-btn.stroop-wrong::after {
+    content: '✗'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff !important; background: rgba(0,0,0,0.18); border-radius: 14px;
+    animation: stroop-pop 0.3s ease-out forwards;
+  }
+  @keyframes stroop-pop {
+    0%   { opacity: 0; transform: scale(0.7); }
+    50%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  #stroop-result-score { text-align: center; margin-bottom: 28px; }
+  .stroop-big-score { font-size: 58px; font-weight: 900; color: #1a1a2e !important; line-height: 1; letter-spacing: -2px; }
+  .stroop-big-score span { font-size: 28px; font-weight: 600; color: #3d5af1 !important; }
+  .stroop-score-sub { font-size: 14px; color: #999 !important; margin-top: 6px; }
+
+  #stroop-result-grade {
+    background: linear-gradient(135deg, #1a1a2e, #3d5af1);
+    border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 20px;
+  }
+  .stroop-grade-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6) !important; margin-bottom: 6px; }
+  .stroop-grade-title { font-size: 22px; font-weight: 800; color: #fff !important; margin-bottom: 8px; }
+  .stroop-grade-desc { font-size: 14px; color: rgba(255,255,255,0.85) !important; line-height: 1.6; }
+
+  .stroop-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .stroop-stat-card { background: #f7f8fa; border-radius: 12px; padding: 16px; text-align: center; }
+  .stroop-stat-val { font-size: 22px; font-weight: 800; color: #1a1a2e !important; line-height: 1; }
+  .stroop-stat-label { font-size: 12px; color: #999 !important; margin-top: 5px; line-height: 1.4; }
+  .stroop-stat-highlight { background: #fff8ec; }
+  .stroop-stat-highlight .stroop-stat-val { color: #d48000 !important; }
+
+  #stroop-compare { background: #f7f8fa; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+  #stroop-compare h3 { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #bbb !important; margin-bottom: 4px; }
+  .stroop-section-label { font-size: 11px; color: #ccc !important; text-align: right; margin: 8px 0 10px; }
+  .stroop-compare-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stroop-compare-row:last-child { margin-bottom: 0; }
+  .stroop-compare-label { font-size: 13px; font-weight: 600; color: #555 !important; width: 52px; flex-shrink: 0; }
+  .stroop-compare-bar-wrap { flex: 1; background: #e8eaf0; border-radius: 6px; height: 10px; overflow: hidden; }
+  .stroop-compare-bar { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(.4,0,.2,1); width: 0%; }
+  .stroop-bar-con { background: #3d5af1; }
+  .stroop-bar-inc { background: #e63946; }
+  .stroop-compare-val { font-size: 13px; font-weight: 700; color: #333 !important; width: 80px; text-align: right; flex-shrink: 0; }
+
+  #stroop-btn-restart {
+    display: block; width: 100%;
+    background: linear-gradient(135deg, #3d5af1, #1a1a2e);
+    color: #fff !important; font-size: 16px; font-weight: 700;
+    border: none; border-radius: 12px; padding: 16px;
+    cursor: pointer; margin-bottom: 10px;
+    -webkit-tap-highlight-color: transparent; transition: transform 0.1s;
+  }
+  #stroop-btn-restart:active { transform: scale(0.98); }
+
+  .stroop-action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .stroop-action-row button {
+    border: none; border-radius: 12px; padding: 14px 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; min-height: 52px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+  }
+  .stroop-action-row button:active { transform: scale(0.97); }
+  #stroop-btn-copy { background: #f0f4ff; color: #3d5af1 !important; }
+  #stroop-btn-share { background: linear-gradient(135deg, #ff6b35, #f7c948); color: #fff !important; }
+
+  .stroop-toast {
+    text-align: center; font-size: 13px; color: #2a9d5c !important;
+    font-weight: 600; margin-top: 6px; opacity: 0;
+    transition: opacity 0.3s; min-height: 18px;
+  }
+  .stroop-toast.stroop-visible { opacity: 1; }
+</style>
+
+<div id="stroop-wrap">
+  <div id="stroop-header">
+    <div id="stroop-header-badge">Cognitive Test</div>
+    <h1>스트룹 테스트</h1>
+    <p>글자색 인식과 언어 간섭 효과 측정</p>
+  </div>
+  <div id="stroop-body">
+
+    <div id="stroop-screen-start" class="stroop-screen stroop-active">
+      <div id="stroop-start-desc">
+        <p>화면에 나타나는 단어의 <strong>글자색</strong>을 선택하세요.</p>
+        <p>단어의 <strong>의미</strong>가 아닌, <strong>색깔</strong>을 최대한 빠르고 정확하게 고르는 것이 중요합니다.</p>
+      </div>
+      <div class="stroop-info-grid">
+        <div class="stroop-info-card"><div class="stroop-info-num">20</div><div class="stroop-info-label">총 문항 수</div></div>
+        <div class="stroop-info-card"><div class="stroop-info-num">~1분</div><div class="stroop-info-label">소요 시간</div></div>
+        <div class="stroop-info-card"><div class="stroop-info-num">10</div><div class="stroop-info-label">일치 조건</div></div>
+        <div class="stroop-info-card"><div class="stroop-info-num">10</div><div class="stroop-info-label">불일치 조건</div></div>
+      </div>
+      <button id="stroop-btn-start">테스트 시작하기 →</button>
+    </div>
+
+    <div id="stroop-screen-test" class="stroop-screen">
+      <div id="stroop-top-bar">
+        <div id="stroop-progress-bar-wrap"><div id="stroop-progress-bar"></div></div>
+        <div id="stroop-timer-wrap">
+          <div id="stroop-timer-icon">⏱</div>
+          <div id="stroop-timer">0.0s</div>
+        </div>
+      </div>
+      <div id="stroop-progress-meta">
+        <div id="stroop-progress-text"><span id="stroop-cur">1</span> / 20 문항</div>
+        <div id="stroop-timer-label">경과 시간</div>
+      </div>
+      <div id="stroop-word-display">
+        <div id="stroop-type-tag">일치</div>
+        <div id="stroop-word" class="stroop-show">빨강</div>
+      </div>
+      <div id="stroop-instruction">화면 단어의 <strong>글자색</strong>을 선택하세요</div>
+      <div id="stroop-color-btns">
+        <button class="stroop-color-btn" data-color="빨강">빨강</button>
+        <button class="stroop-color-btn" data-color="파랑">파랑</button>
+        <button class="stroop-color-btn" data-color="초록">초록</button>
+        <button class="stroop-color-btn" data-color="노랑">노랑</button>
+      </div>
+    </div>
+
+    <div id="stroop-screen-result" class="stroop-screen">
+      <div id="stroop-result-score">
+        <div class="stroop-big-score" id="stroop-total-acc">0<span>%</span></div>
+        <div class="stroop-score-sub">전체 정답률</div>
+      </div>
+      <div id="stroop-result-grade">
+        <div class="stroop-grade-label">결과 해석</div>
+        <div class="stroop-grade-title" id="stroop-grade-title">—</div>
+        <div class="stroop-grade-desc" id="stroop-grade-desc">—</div>
+      </div>
+      <div class="stroop-stat-grid">
+        <div class="stroop-stat-card"><div class="stroop-stat-val" id="stroop-avg-rt">—</div><div class="stroop-stat-label">평균 반응 시간 (ms)</div></div>
+        <div class="stroop-stat-card stroop-stat-highlight"><div class="stroop-stat-val" id="stroop-effect">—</div><div class="stroop-stat-label">스트룹 효과 (ms 차이)</div></div>
+      </div>
+      <div id="stroop-compare">
+        <h3>일치 vs 불일치 비교</h3>
+        <div class="stroop-section-label">반응 시간 (ms)</div>
+        <div class="stroop-compare-row">
+          <div class="stroop-compare-label">일치</div>
+          <div class="stroop-compare-bar-wrap"><div class="stroop-compare-bar stroop-bar-con" id="stroop-bar-con"></div></div>
+          <div class="stroop-compare-val" id="stroop-val-con">—</div>
+        </div>
+        <div class="stroop-compare-row">
+          <div class="stroop-compare-label">불일치</div>
+          <div class="stroop-compare-bar-wrap"><div class="stroop-compare-bar stroop-bar-inc" id="stroop-bar-inc"></div></div>
+          <div class="stroop-compare-val" id="stroop-val-inc">—</div>
+        </div>
+        <div class="stroop-section-label" style="margin-top:14px;">정답률 (%)</div>
+        <div class="stroop-compare-row">
+          <div class="stroop-compare-label">일치</div>
+          <div class="stroop-compare-bar-wrap"><div class="stroop-compare-bar stroop-bar-con" id="stroop-bar-acc-con"></div></div>
+          <div class="stroop-compare-val" id="stroop-val-acc-con">—</div>
+        </div>
+        <div class="stroop-compare-row">
+          <div class="stroop-compare-label">불일치</div>
+          <div class="stroop-compare-bar-wrap"><div class="stroop-compare-bar stroop-bar-inc" id="stroop-bar-acc-inc"></div></div>
+          <div class="stroop-compare-val" id="stroop-val-acc-inc">—</div>
+        </div>
+      </div>
+      <button id="stroop-btn-restart">🔄 다시하기</button>
+      <div class="stroop-action-row">
+        <button id="stroop-btn-copy">📋 결과 복사</button>
+        <button id="stroop-btn-share">🔗 결과 공유</button>
+      </div>
+      <div id="stroop-copy-toast" class="stroop-toast">✓ 클립보드에 복사되었습니다</div>
+      <div id="stroop-share-toast" class="stroop-toast">✓ 공유 텍스트가 복사되었습니다</div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+(function() {
+  var COLORS = ['빨강','파랑','초록','노랑'];
+  var COLOR_MAP = { '빨강':'#e63946','파랑':'#3d5af1','초록':'#2a9d5c','노랑':'#f4a200' };
+  var trials, currentIdx, results, startTime, locked;
+  var timerInterval = null, testStartTime = null, resultData = null;
+
+  function buildTrials() {
+    var con = [];
+    for (var i = 0; i < 10; i++) {
+      var c = COLORS[i % 4];
+      con.push({ word:c, color:c, type:'con' });
+    }
+    var inc = [];
+    for (var j = 0; j < 10; j++) {
+      var w = COLORS[j % 4], col;
+      do { col = COLORS[Math.floor(Math.random()*4)]; } while (col === w);
+      inc.push({ word:w, color:col, type:'inc' });
+    }
+    var all = con.concat(inc);
+    for (var k = all.length-1; k > 0; k--) {
+      var r = Math.floor(Math.random()*(k+1));
+      var tmp = all[k]; all[k] = all[r]; all[r] = tmp;
+    }
+    return all;
+  }
+
+  function showScreen(id) {
+    ['stroop-screen-start','stroop-screen-test','stroop-screen-result'].forEach(function(s){
+      document.getElementById(s).classList.remove('stroop-active');
+    });
+    document.getElementById(id).classList.add('stroop-active');
+  }
+
+  function startTimer() {
+    testStartTime = performance.now();
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(function(){
+      var el = document.getElementById('stroop-timer');
+      if (!el) return;
+      var sec = (performance.now() - testStartTime) / 1000;
+      el.textContent = sec.toFixed(1) + 's';
+      if (sec >= 30) el.classList.add('stroop-timer-warn');
+      else el.classList.remove('stroop-timer-warn');
+    }, 100);
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function startTest() {
+    trials = buildTrials();
+    currentIdx = 0; results = []; locked = false; resultData = null;
+    var timerEl = document.getElementById('stroop-timer');
+    timerEl.textContent = '0.0s';
+    timerEl.classList.remove('stroop-timer-warn');
+    showScreen('stroop-screen-test');
+    startTimer();
+    showTrial();
+  }
+
+  function showTrial() {
+    var t = trials[currentIdx];
+    var wordEl = document.getElementById('stroop-word');
+    document.getElementById('stroop-progress-bar').style.width = (currentIdx/20*100) + '%';
+    document.getElementById('stroop-cur').textContent = currentIdx + 1;
+
+    var tag = document.getElementById('stroop-type-tag');
+    if (t.type === 'con') {
+      tag.textContent = '일치';
+      tag.setAttribute('style','color:#3d5af1 !important;background:#f0f4ff;font-size:12px;font-weight:600;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;');
+    } else {
+      tag.textContent = '불일치';
+      tag.setAttribute('style','color:#e63946 !important;background:#fff0f0;font-size:12px;font-weight:600;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;');
+    }
+
+    wordEl.classList.remove('stroop-show');
+    wordEl.classList.add('stroop-flash');
+    document.querySelectorAll('.stroop-color-btn').forEach(function(b){
+      b.classList.remove('stroop-correct','stroop-wrong'); b.disabled = false;
+    });
+
+    setTimeout(function(){
+      wordEl.textContent = t.word;
+      /* setAttribute로 !important 인라인 스타일 적용 → 블로그 테마 CSS 완전 무력화 */
+      wordEl.setAttribute('style', 'color:' + COLOR_MAP[t.color] + ' !important;font-size:clamp(44px,12vw,68px);font-weight:900;letter-spacing:-1px;line-height:1;transition:opacity 0.15s,transform 0.15s;opacity:1;transform:scale(1);');
+      wordEl.classList.remove('stroop-flash');
+      wordEl.classList.add('stroop-show');
+      startTime = performance.now();
+      locked = false;
+    }, 180);
+  }
+
+  function handleAnswer(chosen) {
+    if (locked) return;
+    locked = true;
+    var rt = Math.round(performance.now() - startTime);
+    var t = trials[currentIdx];
+    var correct = chosen === t.color;
+    results.push({ type:t.type, correct:correct, rt:rt });
+
+    document.querySelectorAll('.stroop-color-btn').forEach(function(b){
+      b.disabled = true;
+      if (b.getAttribute('data-color') === chosen)
+        b.classList.add(correct ? 'stroop-correct' : 'stroop-wrong');
+    });
+
+    setTimeout(function(){
+      currentIdx++;
+      if (currentIdx < 20) showTrial();
+      else { stopTimer(); showResult(); }
+    }, 420);
+  }
+
+  function avg(arr, key) {
+    if (!arr.length) return 0;
+    return arr.reduce(function(s,r){ return s+r[key]; }, 0) / arr.length;
+  }
+  function acc(arr) {
+    if (!arr.length) return 0;
+    return Math.round(arr.filter(function(r){ return r.correct; }).length / arr.length * 100);
+  }
+
+  function showResult() {
+    document.getElementById('stroop-progress-bar').style.width = '100%';
+    showScreen('stroop-screen-result');
+
+    var conR = results.filter(function(r){ return r.type==='con'; });
+    var incR = results.filter(function(r){ return r.type==='inc'; });
+    var totalAcc = acc(results);
+    var avgRt = Math.round(avg(results,'rt'));
+    var conRt = Math.round(avg(conR,'rt'));
+    var incRt = Math.round(avg(incR,'rt'));
+    var effect = incRt - conRt;
+    var conAcc = acc(conR), incAcc = acc(incR);
+
+    var gradeTitle, gradeDesc, gradeEmoji;
+    if (effect >= 200)      { gradeEmoji='🧩'; gradeTitle='강한 스트룹 효과'; gradeDesc='불일치 조건에서 반응이 크게 느려졌습니다. 언어 자동화 처리가 강하게 나타나며, 이는 매우 일반적인 현상입니다.'; }
+    else if (effect >= 80)  { gradeEmoji='⚡'; gradeTitle='평균적인 스트룹 효과'; gradeDesc='일치/불일치 간 적당한 반응 차이가 관찰됩니다. 억제 제어 능력이 정상 범위에 있습니다.'; }
+    else if (effect >= 0)   { gradeEmoji='🎯'; gradeTitle='약한 스트룹 효과'; gradeDesc='불일치 조건에서도 빠르게 반응했습니다. 인지적 유연성과 간섭 억제 능력이 우수합니다.'; }
+    else                    { gradeEmoji='🔬'; gradeTitle='역 스트룹 효과'; gradeDesc='불일치 조건이 오히려 더 빠른 반응을 보였습니다. 매우 드문 케이스로, 색상 처리 전략이 독특합니다.'; }
+
+    document.getElementById('stroop-total-acc').innerHTML = totalAcc + '<span>%</span>';
+    document.getElementById('stroop-avg-rt').textContent = avgRt + ' ms';
+    document.getElementById('stroop-effect').textContent = (effect >= 0 ? '+' : '') + effect + ' ms';
+    document.getElementById('stroop-grade-title').textContent = gradeEmoji + ' ' + gradeTitle;
+    document.getElementById('stroop-grade-desc').textContent = gradeDesc;
+    document.getElementById('stroop-val-con').textContent = conRt + ' ms';
+    document.getElementById('stroop-val-inc').textContent = incRt + ' ms';
+    document.getElementById('stroop-val-acc-con').textContent = conAcc + '%';
+    document.getElementById('stroop-val-acc-inc').textContent = incAcc + '%';
+
+    var maxRt = Math.max(conRt, incRt, 1);
+    setTimeout(function(){
+      document.getElementById('stroop-bar-con').style.width = (conRt/maxRt*100) + '%';
+      document.getElementById('stroop-bar-inc').style.width = (incRt/maxRt*100) + '%';
+      document.getElementById('stroop-bar-acc-con').style.width = conAcc + '%';
+      document.getElementById('stroop-bar-acc-inc').style.width = incAcc + '%';
+    }, 80);
+
+    resultData = { totalAcc:totalAcc, avgRt:avgRt, conRt:conRt, incRt:incRt, conAcc:conAcc, incAcc:incAcc, effect:effect, gradeTitle:gradeTitle, gradeEmoji:gradeEmoji };
+  }
+
+  function copyToClipboard(text, toastId) {
+    function doToast() {
+      var el = document.getElementById(toastId);
+      el.classList.add('stroop-visible');
+      setTimeout(function(){ el.classList.remove('stroop-visible'); }, 2500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(doToast);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('style','position:fixed;top:-999px;left:-999px;opacity:0;');
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      doToast();
+    }
+  }
+
+  function getResultText() {
+    var d = resultData; if (!d) return '';
+    return '📊 스트룹 테스트 결과\n─────────────────\n전체 정답률: ' + d.totalAcc + '%\n평균 반응 시간: ' + d.avgRt + 'ms\n\n▸ 일치 조건:   ' + d.conRt + 'ms  / 정답률 ' + d.conAcc + '%\n▸ 불일치 조건: ' + d.incRt + 'ms  / 정답률 ' + d.incAcc + '%\n\n스트룹 효과: ' + (d.effect>=0?'+':'') + d.effect + 'ms\n' + d.gradeEmoji + ' ' + d.gradeTitle;
+  }
+
+  function getShareText() {
+    var d = resultData; if (!d) return '';
+    var url = window.location.href.split('#')[0];
+    return d.gradeEmoji + ' 나의 스트룹 테스트 결과\n\n정답률 ' + d.totalAcc + '%  |  평균 반응 ' + d.avgRt + 'ms\n스트룹 효과: ' + (d.effect>=0?'+':'') + d.effect + 'ms (' + d.gradeTitle + ')\n\n👉 나도 테스트해보기: ' + url + '\n#스트룹테스트 #인지심리 #반응속도테스트';
+  }
+
+  document.getElementById('stroop-btn-start').addEventListener('click', startTest);
+  document.getElementById('stroop-btn-restart').addEventListener('click', startTest);
+  document.querySelectorAll('.stroop-color-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleAnswer(this.getAttribute('data-color')); });
+  });
+  document.getElementById('stroop-btn-copy').addEventListener('click', function(){
+    if (!resultData) return;
+    copyToClipboard(getResultText(), 'stroop-copy-toast');
+  });
+  document.getElementById('stroop-btn-share').addEventListener('click', function(){
+    if (!resultData) return;
+    var shareText = getShareText();
+    var url = window.location.href.split('#')[0];
+    if (navigator.share) {
+      navigator.share({ title:'스트룹 테스트 결과 공유', text:shareText, url:url })
+        .catch(function(){ copyToClipboard(shareText, 'stroop-share-toast'); });
+    } else {
+      copyToClipboard(shareText, 'stroop-share-toast');
+    }
+  });
+})();
+</script>
