@@ -619,5 +619,10 @@
     if (!resultData) return;
     copyToClipboard(getResultText(), 'stroop-copy-toast');
   });
+
+  setInterval(function() {
+  var h = document.getElementById('stroop-root').scrollHeight;
+  window.parent.postMessage({ iframeHeight: h }, '*');
+  }, 500);
 })();
 </script>
