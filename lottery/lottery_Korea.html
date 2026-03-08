@@ -966,13 +966,40 @@ async function shareResult() {
   const sorted = state.drawnNumbers.map(d=>d.number).sort((a,b)=>a-b).join(', ');
   const url = getReferrerUrl();
   const text = `🎱 오늘의 로또 번호 추첨 결과\n\n당첨번호: ${sorted}\n\n🔗 직접 뽑아보기: ${url}`;
+
+  let success = false;
+
+  // 1) Web Share API
   try {
-    if(navigator.share) await navigator.share({text});
-    else { await navigator.clipboard.writeText(text); showToast('📋 결과가 클립보드에 복사되었습니다!'); }
-  } catch(e) {
-    try { await navigator.clipboard.writeText(text); showToast('📋 결과가 클립보드에 복사되었습니다!'); }
-    catch(e2) { showToast('공유에 실패했습니다.'); }
+    if (navigator.share) {
+      await navigator.share({ text });
+      success = true;
+    }
+  } catch(e) {}
+
+  // 2) Clipboard API
+  if (!success) {
+    try {
+      await navigator.clipboard.writeText(text);
+      success = true;
+    } catch(e) {}
   }
+
+  // 3) execCommand 폴백 (iframe에서도 동작)
+  if (!success) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      success = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch(e) {}
+  }
+
+  if (success) showToast('📋 결과가 클립보드에 복사되었습니다!');
+  else showToast('공유에 실패했습니다.');
 }
 
 function showToast(msg) {
