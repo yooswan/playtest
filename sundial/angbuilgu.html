@@ -209,7 +209,7 @@ input[type=range].ab-slider::-moz-range-thumb{
     <div class="ab-accordion-item">
       <button class="ab-accordion-btn" data-target="acc1"><span>🏛️ 역사적 배경</span><span class="icon">▼</span></button>
       <div class="ab-accordion-content" id="acc1"><div class="ab-accordion-inner">
-        앙부일구는 <strong>1434년(세종 16년)</strong> 세종대왕의 명으로 <strong>장영실, 이천, 김조</strong> 등이 제작한 해시계입니다. '앙부일구'라는 이름은 <strong>'하늘을 우러러 보는(仰) 솥(釜) 모양의 해시계(日晷)'</strong>라는 뜻입니다. 현존하는 앙부일구는 <strong>국보 제230호</strong>로 지정되어 있으며, 종묘와 혜정교 등에 설치하여 백성들이 시각을 알 수 있도록 했습니다.
+        앙부일구는 <strong>1434년(세종 16년)</strong> 세종대왕의 명으로 <strong>장영실, 이천, 김조</strong> 등이 제작한 해시계입니다. '앙부일구'라는 이름은 <strong>'하늘을 우러러 보는(仰) 솥(釜) 모양의 해시계(日晷)'</strong>라는 뜻을 담고 있습니다. 현재 국립고궁박물관 등이 소장한 앙부일구는 <strong>보물</strong>로 지정되어 관리되고 있으며, 세종대왕은 이를 <strong>종묘 앞과 혜정교</strong> 등 사람들이 많이 다니는 곳에 설치하여 우리나라 최초의 공공 시계로서 백성들이 시각을 알 수 있도록 했습니다.
       </div></div>
     </div>
     <div class="ab-accordion-item">
@@ -978,20 +978,54 @@ document.querySelectorAll('.ab-accordion-btn').forEach(function(b){
 /* ═══════════════════════════════════════
    SHARE
    ═══════════════════════════════════════ */
-shareBtn.addEventListener('click', async function(){
-  var ref = document.referrer || location.href;
+function getReferrerUrl() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('ref') || document.referrer || window.location.href;
+}
+
+async function shareResult() {
+  var ref = getReferrerUrl();
   var ji = getJishi(app.time);
   var txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
     + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
     + '\n\n🔗 ' + ref;
+
+  let success = false;
+
+  // 1) Web Share API
   try {
-    if (navigator.share) await navigator.share({text:txt});
-    else { await navigator.clipboard.writeText(txt); alert('클립보드에 복사되었습니다!'); }
-  } catch(e){
-    try { await navigator.clipboard.writeText(txt); alert('클립보드에 복사되었습니다!'); }
-    catch(e2){ alert('공유 기능을 사용할 수 없습니다.'); }
+    if (navigator.share) {
+      await navigator.share({ text: txt });
+      success = true;
+    }
+  } catch(e) {}
+
+  // 2) Clipboard API
+  if (!success) {
+    try {
+      await navigator.clipboard.writeText(txt);
+      success = true;
+    } catch(e) {}
   }
-});
+
+  // 3) execCommand 폴백 (iframe에서도 동작)
+  if (!success) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      success = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch(e) {}
+  }
+
+  if (success) alert('📋 공유 텍스트가 클립보드에 복사되었습니다!');
+  else alert('공유에 실패했습니다.');
+}
+
+shareBtn.addEventListener('click', shareResult);
 
 /* ═══════════════════════════════════════
    RESIZE & UTILS
