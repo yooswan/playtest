@@ -990,39 +990,42 @@ async function shareResult() {
     + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
     + '\n\n🔗 ' + ref;
 
-  let success = false;
-
-  // 1) Web Share API
-  try {
-    if (navigator.share) {
-      await navigator.share({ text: txt });
-      success = true;
+  // 1) Web Share API 시도
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: '앙부일구 시뮬레이터',
+        text: txt,
+        url: ref // URL을 별도 필드로 분리하는 것이 더 안정적입니다.
+      });
+      return; // 성공 시 종료
+    } catch (e) {
+      console.log('Web Share 실패:', e.name);
+      // 'NotAllowedError'가 발생하면 권한 문제(allow 속성)입니다.
     }
-  } catch(e) {}
+  }
 
-  // 2) Clipboard API
-  if (!success) {
-    try {
+  // 2) Clipboard API 시도 (Web Share가 안될 경우 폴백)
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(txt);
-      success = true;
-    } catch(e) {}
+      alert('📋 공유 내용이 클립보드에 복사되었습니다!');
+      return;
+    }
+  } catch (e) {
+    console.log('클립보드 API 실패');
   }
 
-  // 3) execCommand 폴백 (iframe에서도 동작)
-  if (!success) {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = txt;
-      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      success = document.execCommand('copy');
-      document.body.removeChild(ta);
-    } catch(e) {}
-  }
-
-  if (success) alert('📋 공유 텍스트가 클립보드에 복사되었습니다!');
-  else alert('공유에 실패했습니다.');
+  // 3) 구형 방식 폴백
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  document.body.appendChild(ta);
+  ta.select();
+  const success = document.execCommand('copy');
+  document.body.removeChild(ta);
+  
+  if (success) alert('📋 클립보드에 복사되었습니다!');
+  else alert('공유 기능을 사용할 수 없는 환경입니다.');
 }
 
 shareBtn.addEventListener('click', shareResult);
