@@ -988,7 +988,8 @@ async function shareResult() {
   var ji = getJishi(app.time);
   var txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
     + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
-    + '\n\n🔗 ' + ref;
+    + '\n\n👇 아래 링크에서 해시계 체험해보기\n'
+    + '🔗 ' + ref;
 
   // 1) Web Share API 시도
   if (navigator.share) {
