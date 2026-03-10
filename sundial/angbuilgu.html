@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>앙부일구 시뮬레이터 — 조선의 해시계를 체험하다</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ivory:#F5F0E8;--bronze-dark:#6B4D2E;
+  --red:#C23B22;--teal:#2B6B5E;--ink:#2C2C2C;--ink-light:#5A5A5A;
+  --gold:#D4A843;
+  --font:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{background:var(--ivory);color:var(--ink);font-family:var(--font);line-height:1.5;overflow-x:hidden}
+
+#angbuilgu-wrap{max-width:600px;margin:0 auto;padding:0 16px 40px}
+
+.ab-header{text-align:center;padding:20px 0 10px}
+.ab-header h1{font-size:1.45rem;font-weight:800;color:var(--ink);letter-spacing:-0.02em;margin-bottom:2px}
+.ab-header h1 .hanja{font-weight:400;color:var(--bronze-dark);font-size:1.05rem;display:block;margin-top:1px}
+.ab-header .subtitle{font-size:0.82rem;color:var(--ink-light)}
+
+.ab-canvas-wrap{
+  position:relative;width:100%;aspect-ratio:1/0.82;
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.15),0 2px 8px rgba(0,0,0,0.08);
+  background:#1a1a2e;margin-bottom:10px;
+}
+.ab-canvas-wrap canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+
+.ab-night-overlay{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(10,10,30,0.88);color:#e0d8c8;font-size:1.05rem;
+  text-align:center;z-index:5;border-radius:14px;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+.ab-night-overlay.visible{display:flex}
+.ab-night-overlay .moon{font-size:2.5rem}
+
+.ab-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.ab-info-card{
+  background:#fff;border-radius:10px;padding:8px 10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);text-align:center;
+}
+.ab-info-card .label{font-size:0.7rem;color:var(--ink-light);margin-bottom:1px}
+.ab-info-card .value{font-size:1.15rem;font-weight:700;color:var(--ink)}
+.ab-info-card .value .hj{color:var(--red);font-size:1.05rem}
+.ab-info-card .sub{font-size:0.7rem;color:var(--ink-light)}
+
+.ab-controls{margin-bottom:14px}
+.ab-time-display{text-align:center;font-size:0.82rem;color:var(--ink-light);margin-bottom:5px;font-variant-numeric:tabular-nums}
+.ab-time-display strong{color:var(--ink);font-size:0.95rem}
+.ab-slider-row{display:flex;align-items:center;gap:8px}
+.ab-slider-wrap{flex:1}
+input[type=range].ab-slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:6px;
+  background:linear-gradient(90deg,#2a2a4a,#e8a04c,#4A90D9,#e8734c,#2a2a4a);
+  border-radius:3px;outline:none;cursor:pointer;
+}
+input[type=range].ab-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--gold);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:grab;
+}
+input[type=range].ab-slider::-moz-range-thumb{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--gold);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:grab;
+}
+.ab-slider-labels{display:flex;justify-content:space-between;font-size:0.65rem;color:var(--ink-light);margin-top:3px;padding:0 2px}
+
+.ab-live-btn{
+  display:flex;align-items:center;gap:4px;
+  padding:5px 12px;border-radius:18px;
+  border:2px solid var(--red);background:transparent;color:var(--red);
+  font-size:0.75rem;font-weight:700;font-family:var(--font);
+  cursor:pointer;white-space:nowrap;transition:all 0.3s;min-height:36px;
+}
+.ab-live-btn.active{background:var(--red);color:#fff}
+.ab-live-btn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.ab-live-btn.active .dot{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.5)}}
+
+.ab-extra-controls{display:flex;align-items:center;gap:5px;margin-top:8px;justify-content:center;flex-wrap:wrap}
+.ab-play-btn{
+  width:34px;height:34px;border-radius:50%;
+  border:2px solid var(--teal);background:transparent;color:var(--teal);
+  font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font);transition:all 0.25s;flex-shrink:0;
+}
+.ab-play-btn:active{transform:scale(0.93)}
+.ab-speed-group{display:flex;gap:3px}
+.ab-speed-btn{
+  padding:4px 9px;border-radius:14px;border:1.5px solid #ccc;
+  background:#fff;color:var(--ink-light);font-size:0.7rem;font-weight:600;
+  font-family:var(--font);cursor:pointer;transition:all 0.25s;white-space:nowrap;
+}
+.ab-speed-btn.active{border-color:var(--teal);background:var(--teal);color:#fff}
+.ab-date-input{
+  padding:4px 8px;border-radius:8px;border:1.5px solid #ccc;
+  font-family:var(--font);font-size:0.72rem;color:var(--ink);background:#fff;
+  cursor:pointer;max-width:130px;
+}
+
+.ab-season{display:flex;gap:4px;margin-top:8px;justify-content:center;flex-wrap:wrap}
+.ab-season-btn{
+  padding:5px 12px;border-radius:16px;border:1.5px solid #ccc;
+  background:#fff;color:var(--ink-light);font-size:0.75rem;font-weight:600;
+  font-family:var(--font);cursor:pointer;transition:all 0.25s;
+}
+.ab-season-btn.active{border-color:var(--teal);background:var(--teal);color:#fff}
+
+.ab-accordion{margin-bottom:16px}
+.ab-accordion-item{background:#fff;border-radius:10px;margin-bottom:6px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+.ab-accordion-btn{
+  width:100%;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;
+  background:none;border:none;font-family:var(--font);font-size:0.9rem;font-weight:600;
+  color:var(--ink);cursor:pointer;text-align:left;
+}
+.ab-accordion-btn .icon{font-size:0.75rem;transition:transform 0.3s;color:var(--ink-light)}
+.ab-accordion-btn.open .icon{transform:rotate(180deg)}
+.ab-accordion-content{max-height:0;overflow:hidden;transition:max-height 0.4s ease}
+.ab-accordion-inner{padding:0 14px 14px;font-size:0.82rem;color:var(--ink-light);line-height:1.7}
+.ab-accordion-inner strong{color:var(--ink)}
+
+.ab-footer{text-align:center;padding:6px 0 0}
+.ab-share-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:11px 26px;border-radius:11px;
+  background:var(--teal);color:#fff;border:none;font-family:var(--font);
+  font-size:0.85rem;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 12px rgba(43,107,94,0.3);transition:transform 0.2s;
+}
+.ab-share-btn:active{transform:scale(0.97)}
+.ab-credit{font-size:0.65rem;color:var(--ink-light);margin-top:10px;opacity:0.5}
+
+@media(max-height:700px){
+  .ab-header{padding:10px 0 6px}.ab-header h1{font-size:1.2rem}
+  .ab-canvas-wrap{aspect-ratio:1/0.7}
+  .ab-info-card{padding:6px 8px}.ab-info-card .value{font-size:1rem}
+}
+@media(max-width:380px){#angbuilgu-wrap{padding:0 10px 30px}.ab-extra-controls{gap:3px}.ab-speed-btn{padding:4px 7px;font-size:0.65rem}}
+</style>
+</head>
+<body>
+<div id="angbuilgu-wrap">
+
+  <header class="ab-header">
+    <h1>앙부일구 시뮬레이터<span class="hanja">仰釜日晷</span></h1>
+    <p class="subtitle">세종대왕의 해시계를 3D로 체험하세요</p>
+  </header>
+
+  <div class="ab-canvas-wrap" id="canvasWrap">
+    <div class="ab-night-overlay" id="nightOverlay">
+      <div class="moon">🌙</div>
+      <div>해가 지면 앙부일구는 쉽니다</div>
+      <div style="font-size:0.8rem;opacity:0.6">슬라이더로 낮 시간을 탐색해보세요</div>
+    </div>
+  </div>
+
+  <div class="ab-info">
+    <div class="ab-info-card">
+      <div class="label">시각</div>
+      <div class="value"><span class="hj" id="infoHanja">午</span> <span id="infoJishi">오시</span></div>
+      <div class="sub" id="infoModern">12:00</div>
+    </div>
+    <div class="ab-info-card">
+      <div class="label">태양 고도</div>
+      <div class="value" id="infoAltitude">52.5°</div>
+      <div class="sub" id="infoShadow">그림자 짧음</div>
+    </div>
+    <div class="ab-info-card">
+      <div class="label">절기</div>
+      <div class="value" id="infoSeason">춘분</div>
+      <div class="sub" id="infoSeasonSub">3월 21일</div>
+    </div>
+  </div>
+
+  <div class="ab-controls">
+    <div class="ab-time-display">
+      <strong id="sliderTimeText">12:00</strong> · <span id="sliderJishi">오시(午時)</span>
+    </div>
+    <div class="ab-slider-row">
+      <div class="ab-slider-wrap">
+        <input type="range" class="ab-slider" id="timeSlider" min="0" max="86400" value="43200" step="60">
+        <div class="ab-slider-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+      </div>
+      <button class="ab-live-btn active" id="liveBtn" title="실시간 연동"><span class="dot"></span>LIVE</button>
+    </div>
+    <div class="ab-extra-controls">
+      <button class="ab-play-btn" id="playBtn" title="재생/일시정지">⏸</button>
+      <div class="ab-speed-group">
+        <button class="ab-speed-btn active" data-speed="1">1×</button>
+        <button class="ab-speed-btn" data-speed="600">10분/초</button>
+        <button class="ab-speed-btn" data-speed="3600">1시간/초</button>
+      </div>
+      <input type="date" class="ab-date-input" id="datePicker">
+    </div>
+    <div class="ab-season">
+      <button class="ab-season-btn" data-season="winter">❄️ 동지</button>
+      <button class="ab-season-btn" data-season="equinox">🌸 춘/추분</button>
+      <button class="ab-season-btn" data-season="summer">☀️ 하지</button>
+    </div>
+  </div>
+
+  <div class="ab-accordion">
+    <div class="ab-accordion-item">
+      <button class="ab-accordion-btn" data-target="acc1"><span>🏛️ 역사적 배경</span><span class="icon">▼</span></button>
+      <div class="ab-accordion-content" id="acc1"><div class="ab-accordion-inner">
+        앙부일구는 <strong>1434년(세종 16년)</strong> 세종대왕의 명으로 <strong>장영실, 이천, 김조</strong> 등이 제작한 해시계입니다. '앙부일구'라는 이름은 <strong>'하늘을 우러러 보는(仰) 솥(釜) 모양의 해시계(日晷)'</strong>라는 뜻입니다. 현존하는 앙부일구는 <strong>국보 제230호</strong>로 지정되어 있으며, 종묘와 혜정교 등에 설치하여 백성들이 시각을 알 수 있도록 했습니다.
+      </div></div>
+    </div>
+    <div class="ab-accordion-item">
+      <button class="ab-accordion-btn" data-target="acc2"><span>🔧 구조와 원리</span><span class="icon">▼</span></button>
+      <div class="ab-accordion-content" id="acc2"><div class="ab-accordion-inner">
+        <strong>오목면(時盤)</strong> — 솥처럼 오목한 반구형 면. 바람 영향을 줄이고 그림자가 정확히 드리워집니다.<br><br>
+        <strong>영침(影針)</strong> — 오목면 중앙에서 북극성 방향으로 세운 막대. 기울기는 설치 위도(서울 37.5°)와 같습니다.<br><br>
+        <strong>시각선(時刻線)</strong> — 세로로 새겨진 곡선. 하루를 12지시(子~亥)로 나눕니다.<br><br>
+        <strong>절기선(節氣線)</strong> — 가로로 새겨진 쌍곡선. 동지(그림자 가장 김)부터 하지(가장 짧음)까지 계절 변화를 나타냅니다.<br><br>
+        <strong>테두리</strong> — 넓은 테두리에 12지시 한자가 새겨져 있습니다.
+      </div></div>
+    </div>
+    <div class="ab-accordion-item">
+      <button class="ab-accordion-btn" data-target="acc3"><span>📖 시각 읽는 법</span><span class="icon">▼</span></button>
+      <div class="ab-accordion-content" id="acc3"><div class="ab-accordion-inner">
+        <strong>1단계:</strong> 영침 그림자 끝(<strong style="color:var(--red)">빨간 점</strong>)이 가리키는 <strong>세로선(시각선)</strong> → 현재 시각<br><br>
+        <strong>2단계:</strong> 그림자 끝이 가리키는 <strong>가로선(절기선)</strong> → 현재 절기<br><br>
+        <strong>동지</strong>에는 태양 고도가 낮아 그림자가 길고 솥 가장자리까지 뻗습니다. <strong>하지</strong>에는 태양이 높아 그림자가 짧고 바닥 근처에 위치합니다.
+      </div></div>
+    </div>
+    <div class="ab-accordion-item">
+      <button class="ab-accordion-btn" data-target="acc4"><span>✨ 과학적 특징</span><span class="icon">▼</span></button>
+      <div class="ab-accordion-content" id="acc4"><div class="ab-accordion-inner">
+        <strong>오목면 설계</strong> — 바람에 영향 없이 정확한 시각 측정이 가능합니다.<br><br>
+        <strong>위도 보정</strong> — 영침 기울기를 위도에 맞춰 조절할 수 있어 어디서든 정확합니다.<br><br>
+        <strong>시각+절기 동시 측정</strong> — 하나의 기구로 두 가지를 읽는 세계적으로 독창적인 설계입니다.
+      </div></div>
+    </div>
+  </div>
+
+  <footer class="ab-footer">
+    <button class="ab-share-btn" id="shareBtn">📤 친구에게 공유하기</button>
+    <p class="ab-credit">앙부일구 시뮬레이터 · 교육용 (서울 37.5°N)</p>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ═══════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════ */
+var DEG = Math.PI / 180;
+var BOWL_R = 10;
+var LAT = 37.5665;
+var LON = 126.9780;
+var SUN_DIST = 50;
+
+var RIM_CHARS = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+var JISHI = [
+  {n:'자시',h:'子',s:23,e:1},{n:'축시',h:'丑',s:1,e:3},{n:'인시',h:'寅',s:3,e:5},
+  {n:'묘시',h:'卯',s:5,e:7},{n:'진시',h:'辰',s:7,e:9},{n:'사시',h:'巳',s:9,e:11},
+  {n:'오시',h:'午',s:11,e:13},{n:'미시',h:'未',s:13,e:15},{n:'신시',h:'申',s:15,e:17},
+  {n:'유시',h:'酉',s:17,e:19},{n:'술시',h:'戌',s:19,e:21},{n:'해시',h:'亥',s:21,e:23}
+];
+var SEASONS_24 = [
+  "입춘","우수","경칩","춘분","청명","곡우",
+  "입하","소만","망종","하지","소서","대서",
+  "입추","처서","백로","추분","한로","상강",
+  "입동","소설","대설","동지","소한","대한"
+];
+var SEASON_DATES = {
+  winter:  {month:11, day:22},
+  equinox: {month:2,  day:20},
+  summer:  {month:5,  day:21}
+};
+
+/* ═══════════════════════════════════════
+   APP STATE
+   ═══════════════════════════════════════ */
+var app = {
+  time: new Date(),
+  speed: 1,
+  playing: true,
+  realtime: true,
+  sliderDragging: false
+};
+
+/* ═══════════════════════════════════════
+   DOM
+   ═══════════════════════════════════════ */
+var $ = function(id){ return document.getElementById(id); };
+var canvasWrap = $('canvasWrap'), nightOv = $('nightOverlay');
+var slider = $('timeSlider'), liveBtn = $('liveBtn');
+var playBtn = $('playBtn'), datePicker = $('datePicker');
+var shareBtn = $('shareBtn');
+
+/* ═══════════════════════════════════════
+   THREE.JS OBJECTS
+   ═══════════════════════════════════════ */
+var scene, camera, renderer, controls;
+var sunMesh, sunGlow, sunLight, ambLight, hemiLight;
+var bowlGroup, shadowMarker, shadowLine, gnomonTipPos;
+
+/* ═══════════════════════════════════════
+   INIT THREE.JS
+   ═══════════════════════════════════════ */
+function initThree(){
+  var W = canvasWrap.clientWidth, H = canvasWrap.clientHeight;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87CEEB);
+  scene.fog = new THREE.FogExp2(0x87CEEB, 0.006);
+
+  camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 200);
+  camera.position.set(0, 16, 24);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  canvasWrap.insertBefore(renderer.domElement, nightOv);
+
+  /* OrbitControls */
+  if (typeof THREE.OrbitControls !== 'undefined') {
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, -3, 0);
+    controls.enablePan = false;
+    controls.minDistance = 12;
+    controls.maxDistance = 50;
+    controls.maxPolarAngle = Math.PI * 0.52;
+    controls.update();
+  } else {
+    camera.lookAt(0, -3, 0);
+  }
+
+  /* Lights */
+  ambLight = new THREE.AmbientLight(0xffeedd, 0.25);
+  scene.add(ambLight);
+
+  hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.2);
+  scene.add(hemiLight);
+
+  sunLight = new THREE.DirectionalLight(0xFFFAF0, 1.5);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.camera.near = 1;
+  sunLight.shadow.camera.far = 120;
+  sunLight.shadow.camera.left = -15;
+  sunLight.shadow.camera.right = 15;
+  sunLight.shadow.camera.top = 15;
+  sunLight.shadow.camera.bottom = -15;
+  sunLight.shadow.bias = -0.001;
+  scene.add(sunLight);
+
+  /* Sun visual */
+  sunMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1.2, 20, 20),
+    new THREE.MeshBasicMaterial({ color: 0xFFDD44 })
+  );
+  scene.add(sunMesh);
+
+  var c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  var ctx = c.getContext('2d');
+  var grad = ctx.createRadialGradient(64,64,0,64,64,64);
+  grad.addColorStop(0,'rgba(255,245,200,0.95)');
+  grad.addColorStop(0.25,'rgba(255,225,120,0.5)');
+  grad.addColorStop(0.6,'rgba(255,190,70,0.12)');
+  grad.addColorStop(1,'rgba(255,160,50,0)');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,128,128);
+  sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c), transparent: true, blending: THREE.AdditiveBlending
+  }));
+  sunGlow.scale.set(6, 6, 1);
+  scene.add(sunGlow);
+
+  /* Build scene */
+  createGround();
+  createAngbuilgu();
+}
+
+/* ═══════════════════════════════════════
+   GROUND
+   ═══════════════════════════════════════ */
+function createGround(){
+  var gnd = new THREE.Mesh(
+    new THREE.PlaneGeometry(120, 120),
+    new THREE.MeshStandardMaterial({ color: 0x6A7A5A, roughness: 0.95 })
+  );
+  gnd.rotation.x = -Math.PI / 2;
+  gnd.position.y = -16;
+  gnd.receiveShadow = true;
+  scene.add(gnd);
+
+  /* Stone platform */
+  var pf = new THREE.Mesh(
+    new THREE.CylinderGeometry(13, 14, 1.2, 8),
+    new THREE.MeshStandardMaterial({ color: 0x9A9A8E, roughness: 0.85, metalness: 0.05 })
+  );
+  pf.position.y = -15.4;
+  pf.receiveShadow = true;
+  pf.castShadow = true;
+  scene.add(pf);
+}
+
+/* ═══════════════════════════════════════
+   ANGBUILGU MODEL (Reference style)
+   ═══════════════════════════════════════ */
+function createAngbuilgu(){
+  bowlGroup = new THREE.Group();
+  scene.add(bowlGroup);
+
+  createBowl();
+  createLines();
+  createGnomon();
+  createBase();
+}
+
+/* ── Bowl (hemisphere BackSide) ── */
+function createBowl(){
+  /* Concave hemisphere: theta PI/2 to PI = bottom half, BackSide = see inside */
+  var geo = new THREE.SphereGeometry(BOWL_R, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  var mat = new THREE.MeshStandardMaterial({
+    color: 0x8c7853,
+    roughness: 0.4,
+    metalness: 0.6,
+    side: THREE.BackSide
+  });
+  var bowl = new THREE.Mesh(geo, mat);
+  bowl.receiveShadow = true;
+  bowlGroup.add(bowl);
+
+  /* Rim torus */
+  var rim = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R, 0.5, 16, 100),
+    new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.45, metalness: 0.5 })
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.castShadow = true;
+  bowlGroup.add(rim);
+
+  /* Outer decorative ring for rim characters */
+  var rimOuter = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R + 0.6, 0.35, 12, 100),
+    new THREE.MeshStandardMaterial({ color: 0x4C3828, roughness: 0.5, metalness: 0.45 })
+  );
+  rimOuter.rotation.x = Math.PI / 2;
+  bowlGroup.add(rimOuter);
+
+  /* Flat rim surface */
+  var rimFlat = new THREE.Mesh(
+    new THREE.RingGeometry(BOWL_R - 0.1, BOWL_R + 0.95, 64),
+    new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.45, metalness: 0.45, side: THREE.DoubleSide })
+  );
+  rimFlat.rotation.x = -Math.PI / 2;
+  rimFlat.position.y = 0;
+  bowlGroup.add(rimFlat);
+
+  /* Rim characters (12 zodiac) */
+  var charR = BOWL_R + 0.55;
+  for (var i = 0; i < 12; i++){
+    var ang = (i / 12) * Math.PI * 2 - Math.PI / 2;
+    var cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    var cx = cv.getContext('2d');
+    cx.fillStyle = '#C9A856';
+    cx.font = 'bold 42px serif';
+    cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.fillText(RIM_CHARS[i], 32, 32);
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(cv), transparent: true
+    }));
+    sp.scale.set(1.0, 1.0, 1);
+    sp.position.set(charR * Math.cos(ang), 0.25, charR * Math.sin(ang));
+    bowlGroup.add(sp);
+  }
+}
+
+/* ═══════════════════════════════════════
+   SHADOW POINT (Spherical Trigonometry)
+   — From reference Angbuilgu.js
+   ═══════════════════════════════════════ */
+function getShadowPoint(H, delta, lat){
+  var cosH = Math.cos(H), sinH = Math.sin(H);
+  var cosD = Math.cos(delta), sinD = Math.sin(delta);
+  var phi = lat;
+
+  /* Sun vector in horizon coordinates (Y=Up, Z=South, X=East) */
+  var sx = -cosD * sinH;
+  var sy = cosD * cosH * Math.cos(phi) + sinD * Math.sin(phi);
+  var sz = cosD * cosH * Math.sin(phi) - sinD * Math.cos(phi);
+
+  /* Shadow = opposite of sun */
+  return new THREE.Vector3(-sx, -sy, -sz);
+}
+
+/* ── Grid Lines (astronomically accurate) ── */
+function createLines(){
+  var latRad = LAT * DEG;
+  var lineMat = new THREE.LineBasicMaterial({
+    color: 0x333333, transparent: true, opacity: 0.55
+  });
+  var majorMat = new THREE.LineBasicMaterial({
+    color: 0x222222, transparent: true, opacity: 0.75
+  });
+  var decMax = 23.44 * DEG;
+
+  /* 13 Seasonal Lines (declination curves) */
+  for (var i = 0; i < 13; i++){
+    var t = i / 12;
+    var delta = -decMax + t * 2 * decMax;
+    var points = [];
+    for (var hDeg = -110; hDeg <= 110; hDeg += 2){
+      var H = hDeg * DEG;
+      var p = getShadowPoint(H, delta, latRad);
+      if (p.y < 0.1){
+        p.setLength(BOWL_R * 0.995);
+        points.push(p);
+      }
+    }
+    if (points.length > 1){
+      var isMajor = (i === 0 || i === 6 || i === 12);
+      bowlGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        isMajor ? majorMat : lineMat
+      ));
+    }
+  }
+
+  /* ~14 Time Lines (hour angle curves, every 15° = 1 hour) */
+  for (var hDeg = -105; hDeg <= 105; hDeg += 15){
+    var H = hDeg * DEG;
+    var points = [];
+    for (var dDeg = -24; dDeg <= 24; dDeg += 1){
+      var delta = dDeg * DEG;
+      var p = getShadowPoint(H, delta, latRad);
+      if (p.y < 0.1){
+        p.setLength(BOWL_R * 0.995);
+        points.push(p);
+      }
+    }
+    if (points.length > 1){
+      var isMajor = (hDeg === 0);
+      bowlGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        isMajor ? majorMat : lineMat
+      ));
+    }
+  }
+}
+
+/* ── Gnomon (pole-pointing spike) ── */
+function createGnomon(){
+  var latRad = LAT * DEG;
+  var poleVec = new THREE.Vector3(0, Math.sin(latRad), -Math.cos(latRad)).normalize();
+  var gLen = BOWL_R * 0.8;
+
+  var gGroup = new THREE.Group();
+
+  /* Main shaft */
+  var shaftGeo = new THREE.CylinderGeometry(0.06, 0.14, gLen, 12);
+  shaftGeo.translate(0, gLen / 2, 0);
+  var shaftMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.85, roughness: 0.2 });
+  var shaft = new THREE.Mesh(shaftGeo, shaftMat);
+  shaft.castShadow = true;
+  gGroup.add(shaft);
+
+  /* Tip sphere */
+  var tipGeo = new THREE.SphereGeometry(0.12, 12, 12);
+  tipGeo.translate(0, gLen, 0);
+  gGroup.add(new THREE.Mesh(tipGeo, shaftMat));
+
+  /* Base collar */
+  var collarGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.15, 12);
+  collarGeo.translate(0, 0.075, 0);
+  gGroup.add(new THREE.Mesh(collarGeo, shaftMat));
+
+  /* Rotate so Y-axis aligns with pole vector */
+  var upAxis = new THREE.Vector3(0, 1, 0);
+  var quat = new THREE.Quaternion().setFromUnitVectors(upAxis, poleVec);
+  gGroup.setRotationFromQuaternion(quat);
+
+  bowlGroup.add(gGroup);
+
+  /* Calculate gnomon tip position in bowlGroup space */
+  gnomonTipPos = poleVec.clone().multiplyScalar(gLen);
+
+  /* Shadow marker (red dot) */
+  shadowMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xC23B22, opacity: 0.85, transparent: true })
+  );
+  shadowMarker.visible = false;
+  bowlGroup.add(shadowMarker);
+
+  /* Shadow line (gnomon tip → shadow point) */
+  var lineGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(), new THREE.Vector3()
+  ]);
+  shadowLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({
+    color: 0x111111, transparent: true, opacity: 0.4
+  }));
+  shadowLine.visible = false;
+  bowlGroup.add(shadowLine);
+}
+
+/* ── Base & Legs ── */
+function createBase(){
+  var baseMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8, metalness: 0.1 });
+  var legMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.78, roughness: 0.28 });
+
+  /* Support ring under rim */
+  var support = new THREE.Mesh(
+    new THREE.CylinderGeometry(BOWL_R * 0.35, BOWL_R * 0.45, 3, 16),
+    baseMat
+  );
+  support.position.y = -BOWL_R - 1.5;
+  support.castShadow = true;
+  support.receiveShadow = true;
+  bowlGroup.add(support);
+
+  /* Stone base block */
+  var base = new THREE.Mesh(
+    new THREE.BoxGeometry(BOWL_R * 1.6, 1.5, BOWL_R * 1.6),
+    baseMat
+  );
+  base.position.y = -BOWL_R - 3.75;
+  base.castShadow = true;
+  base.receiveShadow = true;
+  bowlGroup.add(base);
+
+  /* Four legs */
+  for (var i = 0; i < 4; i++){
+    var ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    var cx = Math.cos(ang), cz = Math.sin(ang);
+    var leg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.6, 2.5, 8),
+      legMat
+    );
+    leg.position.set(cx * 5.5, -BOWL_R - 5.75, cz * 5.5);
+    leg.castShadow = true;
+    bowlGroup.add(leg);
+
+    /* Foot pad */
+    var foot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.8, 0.9, 0.3, 8),
+      legMat
+    );
+    foot.position.set(cx * 5.5, -BOWL_R - 7.15, cz * 5.5);
+    bowlGroup.add(foot);
+  }
+}
+
+/* ═══════════════════════════════════════
+   SUN & SHADOW UPDATE (SunCalc based)
+   ═══════════════════════════════════════ */
+function updateScene(){
+  if (!scene || typeof SunCalc === 'undefined') return;
+
+  var sunPos = SunCalc.getPosition(app.time, LAT, LON);
+  var alt = sunPos.altitude;
+  var az = sunPos.azimuth;
+  var altDeg = alt / DEG;
+
+  /* Sun 3D position (Y=Up, Z=South, X=East) */
+  var sx = -Math.sin(az) * Math.cos(alt) * SUN_DIST;
+  var sy = Math.sin(alt) * SUN_DIST;
+  var sz = Math.cos(az) * Math.cos(alt) * SUN_DIST;
+
+  sunMesh.position.set(sx, sy, sz);
+  sunGlow.position.set(sx, sy, sz);
+  sunLight.position.set(sx, sy, sz);
+
+  /* Is sun above horizon? */
+  var isDay = alt > 0;
+
+  /* Shadow calculation (direct vector, no raycasting) */
+  if (isDay && gnomonTipPos) {
+    var sunVec = new THREE.Vector3(sx, sy, sz).normalize();
+    var shadowVec = sunVec.clone().negate().multiplyScalar(BOWL_R * 0.995);
+
+    shadowMarker.position.copy(shadowVec);
+    shadowMarker.visible = true;
+
+    /* Shadow line from gnomon tip to shadow point */
+    var pos = shadowLine.geometry.attributes.position;
+    pos.setXYZ(0, gnomonTipPos.x, gnomonTipPos.y, gnomonTipPos.z);
+    pos.setXYZ(1, shadowVec.x, shadowVec.y, shadowVec.z);
+    pos.needsUpdate = true;
+    shadowLine.visible = true;
+  } else {
+    shadowMarker.visible = false;
+    shadowLine.visible = false;
+  }
+
+  /* Night overlay */
+  nightOv.classList.toggle('visible', !isDay);
+
+  /* Lighting intensity based on altitude */
+  var t = Math.max(0, Math.sin(alt));
+  sunLight.intensity = 0.5 + t * 1.5;
+  ambLight.intensity = 0.15 + t * 0.35;
+  hemiLight.intensity = 0.1 + t * 0.25;
+
+  /* Sun color (warmer near horizon) */
+  if (t < 0.25) {
+    sunMesh.material.color.setHex(0xFFAA44);
+    sunLight.color.setHex(0xFFBB88);
+  } else {
+    sunMesh.material.color.setHex(0xFFDD44);
+    sunLight.color.setHex(0xFFFAF0);
+  }
+
+  /* Sun glow scale */
+  var gs = 3 + t * 4;
+  sunGlow.scale.set(gs, gs, 1);
+  sunGlow.visible = isDay;
+  sunMesh.visible = isDay;
+
+  /* Sky color */
+  var skyH, skyS, skyL;
+  if (!isDay) {
+    skyH = 0.65; skyS = 0.3; skyL = 0.03;
+  } else if (altDeg < 12) {
+    var f = altDeg / 12;
+    skyH = lerp(0.07, 0.58, f);
+    skyS = lerp(0.6, 0.5, f);
+    skyL = lerp(0.18, 0.48, f);
+  } else {
+    skyH = 0.58; skyS = 0.5; skyL = 0.38 + t * 0.15;
+  }
+  scene.background.setHSL(skyH, skyS, skyL);
+  if (scene.fog) scene.fog.color.copy(scene.background);
+
+  /* Update UI info */
+  updateInfo(altDeg);
+}
+
+/* ═══════════════════════════════════════
+   INFO HELPERS
+   ═══════════════════════════════════════ */
+function getJishi(date){
+  var h = date.getHours();
+  for (var i = 0; i < JISHI.length; i++){
+    var j = JISHI[i];
+    if (j.s > j.e) { if (h >= j.s || h < j.e) return j; }
+    else { if (h >= j.s && h < j.e) return j; }
+  }
+  return JISHI[0];
+}
+
+function fmtTime(date){
+  var h = date.getHours(), m = date.getMinutes();
+  return (h < 10 ? '0':'') + h + ':' + (m < 10 ? '0':'') + m;
+}
+
+function fmtDate(date){
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2,'0');
+  var d = String(date.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + d;
+}
+
+function getKoreanSeason(date){
+  var start = new Date(date.getFullYear(), 1, 4);
+  var diff = date - start;
+  var days = Math.floor(diff / 86400000);
+  var idx = Math.floor(days / 15.218);
+  if (idx < 0) idx += 24;
+  idx = idx % 24;
+  return SEASONS_24[idx] || "";
+}
+
+function updateInfo(altDeg){
+  var ji = getJishi(app.time);
+  var timeStr = fmtTime(app.time);
+
+  $('infoHanja').textContent = ji.h;
+  $('infoJishi').textContent = ji.n;
+  $('infoModern').textContent = timeStr;
+
+  $('infoAltitude').textContent = altDeg.toFixed(1) + '°';
+  if (altDeg > 40) $('infoShadow').textContent = '그림자 짧음';
+  else if (altDeg > 20) $('infoShadow').textContent = '그림자 보통';
+  else if (altDeg > 0) $('infoShadow').textContent = '그림자 김';
+  else $('infoShadow').textContent = '해 없음';
+
+  $('sliderTimeText').textContent = timeStr;
+  $('sliderJishi').textContent = ji.n + '(' + ji.h + '時)';
+
+  var season = getKoreanSeason(app.time);
+  $('infoSeason').textContent = season;
+  var mon = app.time.getMonth() + 1;
+  var day = app.time.getDate();
+  $('infoSeasonSub').textContent = mon + '월 ' + day + '일';
+}
+
+/* ═══════════════════════════════════════
+   ANIMATION LOOP
+   ═══════════════════════════════════════ */
+var lastFrame = 0, lastDateStr = '';
+
+function animate(now){
+  requestAnimationFrame(animate);
+  var dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  if (dt > 0.1) dt = 0.1;
+
+  /* Time progression */
+  if (app.realtime) {
+    app.time = new Date();
+  } else if (app.playing && !app.sliderDragging) {
+    app.time = new Date(app.time.getTime() + app.speed * dt * 1000);
+  }
+
+  updateScene();
+
+  /* Sync slider (seconds of day) */
+  if (!app.sliderDragging) {
+    var totalSec = app.time.getHours() * 3600 + app.time.getMinutes() * 60 + app.time.getSeconds();
+    slider.value = totalSec;
+  }
+
+  /* Sync date picker */
+  var ds = fmtDate(app.time);
+  if (ds !== lastDateStr) {
+    lastDateStr = ds;
+    datePicker.value = ds;
+  }
+
+  /* Render */
+  if (controls) controls.update();
+  renderer.render(scene, camera);
+}
+
+/* ═══════════════════════════════════════
+   UI EVENT HANDLERS
+   ═══════════════════════════════════════ */
+
+/* LIVE button */
+liveBtn.addEventListener('click', function(){
+  app.realtime = !app.realtime;
+  liveBtn.classList.toggle('active', app.realtime);
+  if (app.realtime) {
+    app.time = new Date();
+    app.speed = 1;
+    app.playing = true;
+    playBtn.textContent = '⏸';
+    updateSpeedUI(1);
+    clearSeasonActive();
+  }
+});
+
+/* Time slider */
+slider.addEventListener('input', function(){
+  setManualMode();
+  var secs = parseInt(this.value, 10);
+  var h = Math.floor(secs / 3600);
+  var m = Math.floor((secs % 3600) / 60);
+  var s = secs % 60;
+  var d = new Date(app.time);
+  d.setHours(h, m, s, 0);
+  app.time = d;
+  app.playing = false;
+  playBtn.textContent = '▶';
+});
+slider.addEventListener('mousedown', function(){ app.sliderDragging = true; });
+slider.addEventListener('mouseup', function(){ app.sliderDragging = false; });
+slider.addEventListener('touchstart', function(){ app.sliderDragging = true; }, {passive:true});
+slider.addEventListener('touchend', function(){ app.sliderDragging = false; });
+
+/* Play/Pause */
+playBtn.addEventListener('click', function(){
+  app.playing = !app.playing;
+  playBtn.textContent = app.playing ? '⏸' : '▶';
+  if (app.playing) {
+    if (app.realtime) {
+      app.realtime = false;
+      liveBtn.classList.remove('active');
+    }
+    if (app.speed <= 1) {
+      app.speed = 600;
+      updateSpeedUI(600);
+    }
+  }
+});
+
+/* Speed buttons */
+document.querySelectorAll('.ab-speed-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    app.speed = parseInt(this.dataset.speed, 10);
+    updateSpeedUI(app.speed);
+    if (app.speed > 1) {
+      app.realtime = false;
+      liveBtn.classList.remove('active');
+      app.playing = true;
+      playBtn.textContent = '⏸';
+    } else {
+      /* 1x means realtime */
+      app.realtime = true;
+      liveBtn.classList.add('active');
+      app.playing = true;
+      playBtn.textContent = '⏸';
+      app.time = new Date();
+    }
+  });
+});
+
+function updateSpeedUI(speed){
+  document.querySelectorAll('.ab-speed-btn').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.dataset.speed, 10) === speed);
+  });
+}
+
+/* Date picker */
+datePicker.addEventListener('change', function(){
+  var parts = this.value.split('-');
+  if (parts.length === 3) {
+    setManualMode();
+    app.time.setFullYear(parseInt(parts[0], 10));
+    app.time.setMonth(parseInt(parts[1], 10) - 1);
+    app.time.setDate(parseInt(parts[2], 10));
+    clearSeasonActive();
+  }
+});
+
+/* Season quick buttons */
+document.querySelectorAll('.ab-season-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.ab-season-btn').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    var season = this.dataset.season;
+    var sd = SEASON_DATES[season];
+    var y = app.time.getFullYear();
+    app.time = new Date(y, sd.month, sd.day, app.time.getHours(), app.time.getMinutes());
+    setManualMode();
+    datePicker.value = fmtDate(app.time);
+  });
+});
+
+function setManualMode(){
+  app.realtime = false;
+  liveBtn.classList.remove('active');
+}
+function clearSeasonActive(){
+  document.querySelectorAll('.ab-season-btn').forEach(function(x){ x.classList.remove('active'); });
+}
+
+/* ═══════════════════════════════════════
+   ACCORDION
+   ═══════════════════════════════════════ */
+document.querySelectorAll('.ab-accordion-btn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var tgt = document.getElementById(this.dataset.target);
+    var inn = tgt.querySelector('.ab-accordion-inner');
+    if (this.classList.contains('open')){
+      this.classList.remove('open');
+      tgt.style.maxHeight = '0';
+    } else {
+      this.classList.add('open');
+      tgt.style.maxHeight = inn.scrollHeight + 'px';
+    }
+  });
+});
+
+/* ═══════════════════════════════════════
+   SHARE
+   ═══════════════════════════════════════ */
+shareBtn.addEventListener('click', async function(){
+  var ref = document.referrer || location.href;
+  var ji = getJishi(app.time);
+  var txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
+    + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
+    + '\n\n🔗 ' + ref;
+  try {
+    if (navigator.share) await navigator.share({text:txt});
+    else { await navigator.clipboard.writeText(txt); alert('클립보드에 복사되었습니다!'); }
+  } catch(e){
+    try { await navigator.clipboard.writeText(txt); alert('클립보드에 복사되었습니다!'); }
+    catch(e2){ alert('공유 기능을 사용할 수 없습니다.'); }
+  }
+});
+
+/* ═══════════════════════════════════════
+   RESIZE & UTILS
+   ═══════════════════════════════════════ */
+window.addEventListener('resize', function(){
+  var w = canvasWrap.clientWidth, h = canvasWrap.clientHeight;
+  if (camera && renderer){
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+});
+
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+function init(){
+  initThree();
+
+  /* Set initial date picker */
+  datePicker.value = fmtDate(app.time);
+
+  /* Start animation */
+  app.realtime = true;
+  app.playing = true;
+  liveBtn.classList.add('active');
+  updateSpeedUI(1);
+
+  requestAnimationFrame(animate);
+}
+
+if (typeof THREE !== 'undefined') init();
+else window.addEventListener('load', function(){
+  if (typeof THREE !== 'undefined') init();
+  else canvasWrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:0.85rem;text-align:center;padding:20px">3D 엔진 로드 실패 — 새로고침 해주세요</div>';
+});
+
+})();
+</script>
+</body>
+</html>
