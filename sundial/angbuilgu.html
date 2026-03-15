@@ -310,6 +310,102 @@ var sunMesh, sunGlow, sunLight, ambLight, hemiLight;
 var bowlGroup, shadowMarker, shadowLine, gnomonTipPos;
 
 /* ═══════════════════════════════════════
+   PROCEDURAL TEXTURES (bronze patina, granite)
+   ═══════════════════════════════════════ */
+function createBronzeTexture(size, baseR, baseG, baseB) {
+  size = size || 512;
+  var c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  var ctx = c.getContext('2d');
+
+  /* Base dark bronze */
+  ctx.fillStyle = 'rgb(' + baseR + ',' + baseG + ',' + baseB + ')';
+  ctx.fillRect(0, 0, size, size);
+
+  /* Add noise for patina / weathered look */
+  var imgData = ctx.getImageData(0, 0, size, size);
+  var d = imgData.data;
+  for (var i = 0; i < d.length; i += 4) {
+    var noise = (Math.random() - 0.5) * 35;
+    /* Patina green tint in random spots */
+    var patina = Math.random();
+    if (patina > 0.92) {
+      d[i]   = Math.max(0, Math.min(255, d[i] - 15 + noise));
+      d[i+1] = Math.max(0, Math.min(255, d[i+1] + 18 + noise));
+      d[i+2] = Math.max(0, Math.min(255, d[i+2] + 10 + noise));
+    } else {
+      d[i]   = Math.max(0, Math.min(255, d[i] + noise));
+      d[i+1] = Math.max(0, Math.min(255, d[i+1] + noise * 0.8));
+      d[i+2] = Math.max(0, Math.min(255, d[i+2] + noise * 0.6));
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  /* Subtle radial wear (lighter center from use/polishing) */
+  var grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0, 'rgba(180, 160, 120, 0.08)');
+  grad.addColorStop(0.6, 'rgba(0, 0, 0, 0)');
+  grad.addColorStop(1, 'rgba(20, 35, 20, 0.06)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createBronzeNormalMap(size) {
+  size = size || 512;
+  var c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgb(128,128,255)';
+  ctx.fillRect(0, 0, size, size);
+  var imgData = ctx.getImageData(0, 0, size, size);
+  var d = imgData.data;
+  for (var i = 0; i < d.length; i += 4) {
+    var n = (Math.random() - 0.5) * 18;
+    d[i]   = Math.max(0, Math.min(255, 128 + n));
+    d[i+1] = Math.max(0, Math.min(255, 128 + n));
+    d[i+2] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createGraniteTexture(size) {
+  size = size || 512;
+  var c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#A8A8A0';
+  ctx.fillRect(0, 0, size, size);
+  var imgData = ctx.getImageData(0, 0, size, size);
+  var d = imgData.data;
+  for (var i = 0; i < d.length; i += 4) {
+    var noise = (Math.random() - 0.5) * 50;
+    var speck = Math.random();
+    if (speck > 0.97) {
+      /* Dark speckle */
+      d[i] = 80 + noise; d[i+1] = 78 + noise; d[i+2] = 76 + noise;
+    } else if (speck > 0.93) {
+      /* Light crystal */
+      d[i] = 200 + noise; d[i+1] = 198 + noise; d[i+2] = 195 + noise;
+    } else {
+      d[i]   = Math.max(0, Math.min(255, d[i] + noise));
+      d[i+1] = Math.max(0, Math.min(255, d[i+1] + noise));
+      d[i+2] = Math.max(0, Math.min(255, d[i+2] + noise * 0.9));
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/* ═══════════════════════════════════════
    INIT THREE.JS
    ═══════════════════════════════════════ */
 function initThree(){
@@ -329,7 +425,8 @@ function initThree(){
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.2;
+  renderer.physicallyCorrectLights = true;
   canvasWrap.insertBefore(renderer.domElement, nightOv);
 
   /* OrbitControls */
@@ -347,14 +444,14 @@ function initThree(){
     camera.lookAt(0, -3, 0);
   }
 
-  /* Lights */
-  ambLight = new THREE.AmbientLight(0xffeedd, 0.25);
+  /* ── Enhanced Lighting for Bronze ── */
+  ambLight = new THREE.AmbientLight(0xffeedd, 0.3);
   scene.add(ambLight);
 
-  hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.2);
+  hemiLight = new THREE.HemisphereLight(0xB0D0F0, 0x6B5D4A, 0.45);
   scene.add(hemiLight);
 
-  sunLight = new THREE.DirectionalLight(0xFFFAF0, 1.5);
+  sunLight = new THREE.DirectionalLight(0xFFFAF0, 2.2);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.camera.near = 1;
@@ -364,7 +461,18 @@ function initThree(){
   sunLight.shadow.camera.top = 15;
   sunLight.shadow.camera.bottom = -15;
   sunLight.shadow.bias = -0.001;
+  sunLight.shadow.normalBias = 0.02;
   scene.add(sunLight);
+
+  /* Fill light from below-front for bowl interior reflections */
+  var fillLight = new THREE.PointLight(0xFFEECC, 0.4, 40);
+  fillLight.position.set(0, 3, 12);
+  scene.add(fillLight);
+
+  /* Rim light from behind for metallic edge highlight */
+  var rimLight = new THREE.DirectionalLight(0xCCDDFF, 0.5);
+  rimLight.position.set(0, 8, -15);
+  scene.add(rimLight);
 
   /* Sun visual */
   sunMesh = new THREE.Mesh(
@@ -405,10 +513,14 @@ function createGround(){
   gnd.receiveShadow = true;
   scene.add(gnd);
 
-  /* Stone platform */
+  /* Stone platform - octagonal granite */
+  var graniteTex = createGraniteTexture(256);
+  var pfMat = new THREE.MeshStandardMaterial({
+    map: graniteTex, roughness: 0.88, metalness: 0.02, color: 0xB0ADA0
+  });
   var pf = new THREE.Mesh(
     new THREE.CylinderGeometry(13, 14, 1.2, 8),
-    new THREE.MeshStandardMaterial({ color: 0x9A9A8E, roughness: 0.85, metalness: 0.05 })
+    pfMat
   );
   pf.position.y = -15.4;
   pf.receiveShadow = true;
@@ -417,7 +529,7 @@ function createGround(){
 }
 
 /* ═══════════════════════════════════════
-   ANGBUILGU MODEL (Reference style)
+   ANGBUILGU MODEL
    ═══════════════════════════════════════ */
 function createAngbuilgu(){
   bowlGroup = new THREE.Group();
@@ -429,93 +541,201 @@ function createAngbuilgu(){
   createBase();
 }
 
-/* ── Bowl (hemisphere BackSide) ── */
+/* ── Bowl (hemisphere BackSide) with aged bronze ── */
 function createBowl(){
-  /* Concave hemisphere: theta PI/2 to PI = bottom half, BackSide = see inside */
+  var bronzeTex = createBronzeTexture(512, 58, 42, 28);
+  var bronzeNormal = createBronzeNormalMap(512);
+
+  /* Concave hemisphere */
   var geo = new THREE.SphereGeometry(BOWL_R, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
   var mat = new THREE.MeshStandardMaterial({
-    color: 0x8c7853,
-    roughness: 0.4,
-    metalness: 0.6,
-    side: THREE.BackSide
+    map: bronzeTex,
+    normalMap: bronzeNormal,
+    normalScale: new THREE.Vector2(0.3, 0.3),
+    color: 0x4A3525,
+    roughness: 0.38,
+    metalness: 0.82,
+    side: THREE.BackSide,
+    envMapIntensity: 1.2
   });
   var bowl = new THREE.Mesh(geo, mat);
   bowl.receiveShadow = true;
   bowlGroup.add(bowl);
 
-  /* Rim torus */
-  var rim = new THREE.Mesh(
-    new THREE.TorusGeometry(BOWL_R, 0.5, 16, 100),
-    new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.45, metalness: 0.5 })
-  );
-  rim.rotation.x = Math.PI / 2;
-  rim.castShadow = true;
-  bowlGroup.add(rim);
+  /* Outer shell (visible from outside) */
+  var outerGeo = new THREE.SphereGeometry(BOWL_R + 0.15, 64, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  var outerMat = new THREE.MeshStandardMaterial({
+    map: createBronzeTexture(512, 48, 36, 22),
+    normalMap: bronzeNormal,
+    normalScale: new THREE.Vector2(0.4, 0.4),
+    color: 0x3E2D1C,
+    roughness: 0.45,
+    metalness: 0.78,
+    side: THREE.FrontSide
+  });
+  var outerBowl = new THREE.Mesh(outerGeo, outerMat);
+  outerBowl.castShadow = true;
+  bowlGroup.add(outerBowl);
 
-  /* Outer decorative ring for rim characters */
-  var rimOuter = new THREE.Mesh(
-    new THREE.TorusGeometry(BOWL_R + 0.6, 0.35, 12, 100),
-    new THREE.MeshStandardMaterial({ color: 0x4C3828, roughness: 0.5, metalness: 0.45 })
-  );
-  rimOuter.rotation.x = Math.PI / 2;
-  bowlGroup.add(rimOuter);
+  /* ── Layered Rim with stepped profile ── */
+  var rimBronzeTex = createBronzeTexture(256, 50, 38, 25);
+  var rimMat = new THREE.MeshStandardMaterial({
+    map: rimBronzeTex,
+    color: 0x3D2B1A,
+    roughness: 0.35,
+    metalness: 0.85,
+    normalMap: bronzeNormal,
+    normalScale: new THREE.Vector2(0.2, 0.2)
+  });
 
-  /* Flat rim surface */
-  var rimFlat = new THREE.Mesh(
-    new THREE.RingGeometry(BOWL_R - 0.1, BOWL_R + 0.95, 64),
-    new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.45, metalness: 0.45, side: THREE.DoubleSide })
+  /* Inner rim ring (step 1 - lower) */
+  var rimInner = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R, 0.35, 16, 100),
+    rimMat
   );
+  rimInner.rotation.x = Math.PI / 2;
+  rimInner.castShadow = true;
+  bowlGroup.add(rimInner);
+
+  /* Wide flat rim surface (the main wide band) */
+  var RIM_WIDTH = 1.8;
+  var rimFlatGeo = new THREE.RingGeometry(BOWL_R - 0.15, BOWL_R + RIM_WIDTH, 100, 3);
+  var rimFlatMat = new THREE.MeshStandardMaterial({
+    map: rimBronzeTex,
+    color: 0x3D2B1A,
+    roughness: 0.32,
+    metalness: 0.85,
+    side: THREE.DoubleSide,
+    normalMap: bronzeNormal,
+    normalScale: new THREE.Vector2(0.15, 0.15)
+  });
+  var rimFlat = new THREE.Mesh(rimFlatGeo, rimFlatMat);
   rimFlat.rotation.x = -Math.PI / 2;
-  rimFlat.position.y = 0;
+  rimFlat.position.y = 0.12;
+  rimFlat.receiveShadow = true;
   bowlGroup.add(rimFlat);
 
-  /* Rim characters (12 zodiac) */
-  var charR = BOWL_R + 0.55;
+  /* Outer rim step (raised outer edge) */
+  var rimOuterStep = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R + RIM_WIDTH, 0.25, 12, 100),
+    new THREE.MeshStandardMaterial({
+      map: rimBronzeTex,
+      color: 0x352518,
+      roughness: 0.30,
+      metalness: 0.88
+    })
+  );
+  rimOuterStep.rotation.x = Math.PI / 2;
+  rimOuterStep.position.y = 0.12;
+  rimOuterStep.castShadow = true;
+  bowlGroup.add(rimOuterStep);
+
+  /* Middle decorative groove ring */
+  var grooveRing = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R + RIM_WIDTH * 0.5, 0.08, 8, 100),
+    new THREE.MeshStandardMaterial({
+      color: 0x221510,
+      roughness: 0.6,
+      metalness: 0.7
+    })
+  );
+  grooveRing.rotation.x = Math.PI / 2;
+  grooveRing.position.y = 0.30;
+  bowlGroup.add(grooveRing);
+
+  /* Rim bottom (visible underside of the flat rim) */
+  var rimBottom = new THREE.Mesh(rimFlatGeo.clone(), rimFlatMat.clone());
+  rimBottom.rotation.x = Math.PI / 2;
+  rimBottom.position.y = -0.08;
+  bowlGroup.add(rimBottom);
+
+  /* ── 12 Zodiac Characters on rim (silver inlay look) ── */
+  var charR = BOWL_R + RIM_WIDTH * 0.52;
   for (var i = 0; i < 12; i++){
     var ang = (i / 12) * Math.PI * 2 - Math.PI / 2;
-    var cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+
+    var cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
     var cx = cv.getContext('2d');
-    cx.fillStyle = '#C9A856';
-    cx.font = 'bold 42px serif';
-    cx.textAlign = 'center'; cx.textBaseline = 'middle';
-    cx.fillText(RIM_CHARS[i], 32, 32);
+    /* Dark background matching rim for blending */
+    cx.clearRect(0, 0, 128, 128);
+    /* Silver/gold inlay character */
+    cx.shadowColor = 'rgba(0,0,0,0.6)';
+    cx.shadowOffsetX = 1;
+    cx.shadowOffsetY = 1;
+    cx.shadowBlur = 2;
+    cx.fillStyle = '#B8A878';
+    cx.font = 'bold 72px serif';
+    cx.textAlign = 'center';
+    cx.textBaseline = 'middle';
+    cx.fillText(RIM_CHARS[i], 64, 64);
+    /* Subtle highlight for engraved look */
+    cx.shadowColor = 'rgba(255,240,200,0.3)';
+    cx.shadowOffsetX = -0.5;
+    cx.shadowOffsetY = -0.5;
+    cx.shadowBlur = 1;
+    cx.fillStyle = 'rgba(200, 180, 130, 0.3)';
+    cx.fillText(RIM_CHARS[i], 64, 64);
+
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(cv), transparent: true
+      map: new THREE.CanvasTexture(cv),
+      transparent: true,
+      depthWrite: false
     }));
-    sp.scale.set(1.0, 1.0, 1);
-    sp.position.set(charR * Math.cos(ang), 0.25, charR * Math.sin(ang));
+    sp.scale.set(1.2, 1.2, 1);
+    sp.position.set(charR * Math.cos(ang), 0.35, charR * Math.sin(ang));
     bowlGroup.add(sp);
   }
 }
 
 /* ═══════════════════════════════════════
    SHADOW POINT (Spherical Trigonometry)
-   — From reference Angbuilgu.js
    ═══════════════════════════════════════ */
 function getShadowPoint(H, delta, lat){
   var cosH = Math.cos(H), sinH = Math.sin(H);
   var cosD = Math.cos(delta), sinD = Math.sin(delta);
   var phi = lat;
 
-  /* Sun vector in horizon coordinates (Y=Up, Z=South, X=East) */
   var sx = -cosD * sinH;
   var sy = cosD * cosH * Math.cos(phi) + sinD * Math.sin(phi);
   var sz = cosD * cosH * Math.sin(phi) - sinD * Math.cos(phi);
 
-  /* Shadow = opposite of sun */
   return new THREE.Vector3(-sx, -sy, -sz);
 }
 
-/* ── Grid Lines (astronomically accurate) ── */
+/* ── Grid Lines: Silver Inlay (TubeGeometry) ── */
 function createLines(){
   var latRad = LAT * DEG;
-  var lineMat = new THREE.LineBasicMaterial({
-    color: 0x333333, transparent: true, opacity: 0.55
-  });
-  var majorMat = new THREE.LineBasicMaterial({
-    color: 0x222222, transparent: true, opacity: 0.75
-  });
   var decMax = 23.44 * DEG;
+
+  /* Silver inlay material */
+  var silverMat = new THREE.MeshStandardMaterial({
+    color: 0xC0C0C0,
+    roughness: 0.28,
+    metalness: 0.92,
+    emissive: 0x222222,
+    emissiveIntensity: 0.05
+  });
+  var silverMajorMat = new THREE.MeshStandardMaterial({
+    color: 0xD0D0D0,
+    roughness: 0.22,
+    metalness: 0.95,
+    emissive: 0x333333,
+    emissiveIntensity: 0.08
+  });
+
+  var TUBE_RADIUS = 0.035;
+  var TUBE_MAJOR_RADIUS = 0.055;
+  var TUBE_SEGMENTS = 6;
+
+  /* Helper: create tube from points */
+  function makeTube(points, isMajor) {
+    if (points.length < 2) return;
+    var curve = new THREE.CatmullRomCurve3(points);
+    var radius = isMajor ? TUBE_MAJOR_RADIUS : TUBE_RADIUS;
+    var tubeGeo = new THREE.TubeGeometry(curve, Math.max(points.length * 2, 20), radius, TUBE_SEGMENTS, false);
+    var mesh = new THREE.Mesh(tubeGeo, isMajor ? silverMajorMat : silverMat);
+    bowlGroup.add(mesh);
+  }
 
   /* 13 Seasonal Lines (declination curves) */
   for (var i = 0; i < 13; i++){
@@ -526,16 +746,13 @@ function createLines(){
       var H = hDeg * DEG;
       var p = getShadowPoint(H, delta, latRad);
       if (p.y < 0.1){
-        p.setLength(BOWL_R * 0.995);
+        p.setLength(BOWL_R * 0.993);
         points.push(p);
       }
     }
     if (points.length > 1){
       var isMajor = (i === 0 || i === 6 || i === 12);
-      bowlGroup.add(new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        isMajor ? majorMat : lineMat
-      ));
+      makeTube(points, isMajor);
     }
   }
 
@@ -547,21 +764,18 @@ function createLines(){
       var delta = dDeg * DEG;
       var p = getShadowPoint(H, delta, latRad);
       if (p.y < 0.1){
-        p.setLength(BOWL_R * 0.995);
+        p.setLength(BOWL_R * 0.993);
         points.push(p);
       }
     }
     if (points.length > 1){
       var isMajor = (hDeg === 0);
-      bowlGroup.add(new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        isMajor ? majorMat : lineMat
-      ));
+      makeTube(points, isMajor);
     }
   }
 }
 
-/* ── Gnomon (pole-pointing spike) ── */
+/* ── Gnomon (pole-pointing spike with south support structure) ── */
 function createGnomon(){
   var latRad = LAT * DEG;
   var poleVec = new THREE.Vector3(0, Math.sin(latRad), -Math.cos(latRad)).normalize();
@@ -569,30 +783,88 @@ function createGnomon(){
 
   var gGroup = new THREE.Group();
 
-  /* Main shaft */
-  var shaftGeo = new THREE.CylinderGeometry(0.06, 0.14, gLen, 12);
+  /* Dark bronze gnomon material */
+  var gnomonMat = new THREE.MeshStandardMaterial({
+    color: 0x1C1410,
+    metalness: 0.9,
+    roughness: 0.18,
+    envMapIntensity: 1.5
+  });
+
+  /* Main shaft - slightly tapered */
+  var shaftGeo = new THREE.CylinderGeometry(0.07, 0.16, gLen, 16);
   shaftGeo.translate(0, gLen / 2, 0);
-  var shaftMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.85, roughness: 0.2 });
-  var shaft = new THREE.Mesh(shaftGeo, shaftMat);
+  var shaft = new THREE.Mesh(shaftGeo, gnomonMat);
   shaft.castShadow = true;
   gGroup.add(shaft);
 
-  /* Tip sphere */
-  var tipGeo = new THREE.SphereGeometry(0.12, 12, 12);
-  tipGeo.translate(0, gLen, 0);
-  gGroup.add(new THREE.Mesh(tipGeo, shaftMat));
+  /* Tip - pointed cone instead of sphere */
+  var tipGeo = new THREE.ConeGeometry(0.09, 0.4, 12);
+  tipGeo.translate(0, gLen + 0.2, 0);
+  gGroup.add(new THREE.Mesh(tipGeo, gnomonMat));
 
-  /* Base collar */
-  var collarGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.15, 12);
-  collarGeo.translate(0, 0.075, 0);
-  gGroup.add(new THREE.Mesh(collarGeo, shaftMat));
+  /* Base collar - decorative ring at origin */
+  var collarGeo = new THREE.CylinderGeometry(0.28, 0.35, 0.2, 16);
+  collarGeo.translate(0, 0.1, 0);
+  gGroup.add(new THREE.Mesh(collarGeo, gnomonMat));
+
+  /* Small decorative rings along shaft */
+  for (var ri = 1; ri <= 2; ri++) {
+    var ringGeo = new THREE.TorusGeometry(0.12 - ri * 0.01, 0.025, 8, 16);
+    var ringMesh = new THREE.Mesh(ringGeo, gnomonMat);
+    ringMesh.position.y = gLen * ri / 3;
+    ringMesh.rotation.x = Math.PI / 2;
+    gGroup.add(ringMesh);
+  }
 
   /* Rotate so Y-axis aligns with pole vector */
   var upAxis = new THREE.Vector3(0, 1, 0);
   var quat = new THREE.Quaternion().setFromUnitVectors(upAxis, poleVec);
   gGroup.setRotationFromQuaternion(quat);
-
   bowlGroup.add(gGroup);
+
+  /* ── South Support Structure ── */
+  /* In a real Angbuilgu, the gnomon is supported from the south rim.
+     We create a curved support arm from rim edge to gnomon base. */
+  var supportMat = new THREE.MeshStandardMaterial({
+    color: 0x1C1410,
+    metalness: 0.88,
+    roughness: 0.2
+  });
+
+  /* Support arm: curved path from south rim down to bowl center */
+  var southRimPoint = new THREE.Vector3(0, 0, BOWL_R * 0.95); /* south rim edge */
+  var midPoint = new THREE.Vector3(0, -BOWL_R * 0.25, BOWL_R * 0.5);
+  var centerBase = new THREE.Vector3(0, -BOWL_R * 0.05, 0.1);
+
+  var supportCurve = new THREE.CatmullRomCurve3([
+    southRimPoint,
+    new THREE.Vector3(0, -0.3, BOWL_R * 0.75),
+    midPoint,
+    new THREE.Vector3(0, -BOWL_R * 0.18, BOWL_R * 0.25),
+    centerBase
+  ]);
+  var supportTubeGeo = new THREE.TubeGeometry(supportCurve, 30, 0.15, 12, false);
+  var supportMesh = new THREE.Mesh(supportTubeGeo, supportMat);
+  supportMesh.castShadow = true;
+  bowlGroup.add(supportMesh);
+
+  /* South rim mounting plate */
+  var mountPlate = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.5, 0.12, 16),
+    supportMat
+  );
+  mountPlate.position.set(0, 0.06, BOWL_R * 0.95);
+  bowlGroup.add(mountPlate);
+
+  /* Secondary thin support rod (diagonal brace) */
+  var braceStart = new THREE.Vector3(0, -0.15, BOWL_R * 0.7);
+  var braceEnd = poleVec.clone().multiplyScalar(gLen * 0.35);
+  var braceCurve = new THREE.CatmullRomCurve3([braceStart, braceEnd]);
+  var braceGeo = new THREE.TubeGeometry(braceCurve, 12, 0.06, 8, false);
+  var braceMesh = new THREE.Mesh(braceGeo, supportMat);
+  braceMesh.castShadow = true;
+  bowlGroup.add(braceMesh);
 
   /* Calculate gnomon tip position in bowlGroup space */
   gnomonTipPos = poleVec.clone().multiplyScalar(gLen);
@@ -600,7 +872,15 @@ function createGnomon(){
   /* Shadow marker (red dot) */
   shadowMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.25, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xC23B22, opacity: 0.85, transparent: true })
+    new THREE.MeshStandardMaterial({
+      color: 0xC23B22,
+      emissive: 0xC23B22,
+      emissiveIntensity: 0.35,
+      roughness: 0.5,
+      metalness: 0.3,
+      transparent: true,
+      opacity: 0.9
+    })
   );
   shadowMarker.visible = false;
   bowlGroup.add(shadowMarker);
@@ -616,49 +896,138 @@ function createGnomon(){
   bowlGroup.add(shadowLine);
 }
 
-/* ── Base & Legs ── */
+/* ── Base: Traditional granite cross-shaped pedestal ── */
 function createBase(){
-  var baseMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8, metalness: 0.1 });
-  var legMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.78, roughness: 0.28 });
+  var graniteTex = createGraniteTexture(512);
+  var graniteNormal = createBronzeNormalMap(256);
 
-  /* Support ring under rim */
-  var support = new THREE.Mesh(
-    new THREE.CylinderGeometry(BOWL_R * 0.35, BOWL_R * 0.45, 3, 16),
-    baseMat
+  var stoneMat = new THREE.MeshStandardMaterial({
+    map: graniteTex,
+    normalMap: graniteNormal,
+    normalScale: new THREE.Vector2(0.2, 0.2),
+    color: 0xA8A498,
+    roughness: 0.92,
+    metalness: 0.02
+  });
+
+  var bronzeFittingMat = new THREE.MeshStandardMaterial({
+    color: 0x3D2B1A,
+    roughness: 0.35,
+    metalness: 0.85
+  });
+
+  /* ── Layer 1: Bronze collar directly under bowl ── */
+  var collar = new THREE.Mesh(
+    new THREE.CylinderGeometry(BOWL_R * 0.42, BOWL_R * 0.48, 1.0, 32),
+    bronzeFittingMat
   );
-  support.position.y = -BOWL_R - 1.5;
-  support.castShadow = true;
-  support.receiveShadow = true;
-  bowlGroup.add(support);
+  collar.position.y = -BOWL_R - 0.5;
+  collar.castShadow = true;
+  collar.receiveShadow = true;
+  bowlGroup.add(collar);
 
-  /* Stone base block */
-  var base = new THREE.Mesh(
-    new THREE.BoxGeometry(BOWL_R * 1.6, 1.5, BOWL_R * 1.6),
-    baseMat
+  /* Decorative ring at top of collar */
+  var collarRing = new THREE.Mesh(
+    new THREE.TorusGeometry(BOWL_R * 0.45, 0.12, 8, 32),
+    bronzeFittingMat
   );
-  base.position.y = -BOWL_R - 3.75;
-  base.castShadow = true;
-  base.receiveShadow = true;
-  bowlGroup.add(base);
+  collarRing.rotation.x = Math.PI / 2;
+  collarRing.position.y = -BOWL_R;
+  bowlGroup.add(collarRing);
 
-  /* Four legs */
-  for (var i = 0; i < 4; i++){
-    var ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
-    var cx = Math.cos(ang), cz = Math.sin(ang);
-    var leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.6, 2.5, 8),
-      legMat
-    );
-    leg.position.set(cx * 5.5, -BOWL_R - 5.75, cz * 5.5);
+  /* ── Layer 2: Upper stone tier (octagonal) ── */
+  var upperTier = new THREE.Mesh(
+    new THREE.CylinderGeometry(BOWL_R * 0.55, BOWL_R * 0.6, 1.5, 8),
+    stoneMat
+  );
+  upperTier.position.y = -BOWL_R - 1.75;
+  upperTier.castShadow = true;
+  upperTier.receiveShadow = true;
+  bowlGroup.add(upperTier);
+
+  /* ── Layer 3: Cross-shaped stone base (十) ── */
+  var crossY = -BOWL_R - 3.5;
+  var crossH = 2.0;
+  var crossW = BOWL_R * 1.5;
+  var crossD = BOWL_R * 0.55;
+
+  /* North-South arm */
+  var nsArm = new THREE.Mesh(
+    new THREE.BoxGeometry(crossD, crossH, crossW),
+    stoneMat
+  );
+  nsArm.position.y = crossY;
+  nsArm.castShadow = true;
+  nsArm.receiveShadow = true;
+  bowlGroup.add(nsArm);
+
+  /* East-West arm */
+  var ewArm = new THREE.Mesh(
+    new THREE.BoxGeometry(crossW, crossH, crossD),
+    stoneMat
+  );
+  ewArm.position.y = crossY;
+  ewArm.castShadow = true;
+  ewArm.receiveShadow = true;
+  bowlGroup.add(ewArm);
+
+  /* Center junction decoration (raised square) */
+  var junctionBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(crossD * 1.15, crossH + 0.3, crossD * 1.15),
+    stoneMat
+  );
+  junctionBlock.position.y = crossY;
+  bowlGroup.add(junctionBlock);
+
+  /* ── Cloud-pattern legs (4 corners of cross ends) ── */
+  var legPositions = [
+    {x: 0, z: crossW * 0.45},
+    {x: 0, z: -crossW * 0.45},
+    {x: crossW * 0.45, z: 0},
+    {x: -crossW * 0.45, z: 0}
+  ];
+
+  for (var i = 0; i < legPositions.length; i++) {
+    var lp = legPositions[i];
+
+    /* Main leg - slightly tapered cylinder */
+    var legGeo = new THREE.CylinderGeometry(0.6, 0.75, 2.0, 12);
+    var leg = new THREE.Mesh(legGeo, stoneMat);
+    leg.position.set(lp.x, crossY - crossH / 2 - 1.0, lp.z);
     leg.castShadow = true;
     bowlGroup.add(leg);
 
-    /* Foot pad */
-    var foot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.8, 0.9, 0.3, 8),
-      legMat
+    /* Cloud scroll decoration at top of each leg */
+    var scrollGeo = new THREE.TorusGeometry(0.5, 0.18, 8, 12, Math.PI);
+    var scroll = new THREE.Mesh(scrollGeo, stoneMat);
+    scroll.position.set(lp.x, crossY - crossH / 2 + 0.1, lp.z);
+    /* Rotate scroll to face outward */
+    if (lp.z !== 0) {
+      scroll.rotation.y = 0;
+      scroll.rotation.z = Math.PI / 2;
+    } else {
+      scroll.rotation.y = Math.PI / 2;
+      scroll.rotation.z = Math.PI / 2;
+    }
+    bowlGroup.add(scroll);
+
+    /* Second smaller scroll (cloud billow) */
+    var scroll2Geo = new THREE.TorusGeometry(0.3, 0.13, 8, 10, Math.PI);
+    var scroll2 = new THREE.Mesh(scroll2Geo, stoneMat);
+    scroll2.position.set(
+      lp.x + (lp.x !== 0 ? Math.sign(lp.x) * 0.3 : 0),
+      crossY - crossH / 2 - 0.2,
+      lp.z + (lp.z !== 0 ? Math.sign(lp.z) * 0.3 : 0)
     );
-    foot.position.set(cx * 5.5, -BOWL_R - 7.15, cz * 5.5);
+    scroll2.rotation.copy(scroll.rotation);
+    bowlGroup.add(scroll2);
+
+    /* Foot pad - wider stone base */
+    var footGeo = new THREE.CylinderGeometry(0.9, 1.05, 0.35, 12);
+    var foot = new THREE.Mesh(footGeo, stoneMat);
+    foot.position.set(lp.x, crossY - crossH / 2 - 2.15, lp.z);
+    foot.castShadow = true;
+    foot.receiveShadow = true;
     bowlGroup.add(foot);
   }
 }
@@ -674,7 +1043,7 @@ function updateScene(){
   var az = sunPos.azimuth;
   var altDeg = alt / DEG;
 
-  /* Sun 3D position (Y=Up, Z=South, X=East) */
+  /* Sun 3D position */
   var sx = -Math.sin(az) * Math.cos(alt) * SUN_DIST;
   var sy = Math.sin(alt) * SUN_DIST;
   var sz = Math.cos(az) * Math.cos(alt) * SUN_DIST;
@@ -683,10 +1052,9 @@ function updateScene(){
   sunGlow.position.set(sx, sy, sz);
   sunLight.position.set(sx, sy, sz);
 
-  /* Is sun above horizon? */
   var isDay = alt > 0;
 
-  /* Shadow calculation (direct vector, no raycasting) */
+  /* Shadow calculation */
   if (isDay && gnomonTipPos) {
     var sunVec = new THREE.Vector3(sx, sy, sz).normalize();
     var shadowVec = sunVec.clone().negate().multiplyScalar(BOWL_R * 0.995);
@@ -694,7 +1062,6 @@ function updateScene(){
     shadowMarker.position.copy(shadowVec);
     shadowMarker.visible = true;
 
-    /* Shadow line from gnomon tip to shadow point */
     var pos = shadowLine.geometry.attributes.position;
     pos.setXYZ(0, gnomonTipPos.x, gnomonTipPos.y, gnomonTipPos.z);
     pos.setXYZ(1, shadowVec.x, shadowVec.y, shadowVec.z);
@@ -705,16 +1072,15 @@ function updateScene(){
     shadowLine.visible = false;
   }
 
-  /* Night overlay */
   nightOv.classList.toggle('visible', !isDay);
 
-  /* Lighting intensity based on altitude */
+  /* Lighting intensity — tuned for bronze reflections */
   var t = Math.max(0, Math.sin(alt));
-  sunLight.intensity = 0.5 + t * 1.5;
-  ambLight.intensity = 0.15 + t * 0.35;
-  hemiLight.intensity = 0.1 + t * 0.25;
+  sunLight.intensity = 0.8 + t * 2.0;
+  ambLight.intensity = 0.2 + t * 0.4;
+  hemiLight.intensity = 0.2 + t * 0.35;
 
-  /* Sun color (warmer near horizon) */
+  /* Sun color */
   if (t < 0.25) {
     sunMesh.material.color.setHex(0xFFAA44);
     sunLight.color.setHex(0xFFBB88);
@@ -723,7 +1089,6 @@ function updateScene(){
     sunLight.color.setHex(0xFFFAF0);
   }
 
-  /* Sun glow scale */
   var gs = 3 + t * 4;
   sunGlow.scale.set(gs, gs, 1);
   sunGlow.visible = isDay;
@@ -744,7 +1109,6 @@ function updateScene(){
   scene.background.setHSL(skyH, skyS, skyL);
   if (scene.fog) scene.fog.color.copy(scene.background);
 
-  /* Update UI info */
   updateInfo(altDeg);
 }
 
@@ -818,7 +1182,6 @@ function animate(now){
   lastFrame = now;
   if (dt > 0.1) dt = 0.1;
 
-  /* Time progression */
   if (app.realtime) {
     app.time = new Date();
   } else if (app.playing && !app.sliderDragging) {
@@ -827,20 +1190,17 @@ function animate(now){
 
   updateScene();
 
-  /* Sync slider (seconds of day) */
   if (!app.sliderDragging) {
     var totalSec = app.time.getHours() * 3600 + app.time.getMinutes() * 60 + app.time.getSeconds();
     slider.value = totalSec;
   }
 
-  /* Sync date picker */
   var ds = fmtDate(app.time);
   if (ds !== lastDateStr) {
     lastDateStr = ds;
     datePicker.value = ds;
   }
 
-  /* Render */
   if (controls) controls.update();
   renderer.render(scene, camera);
 }
@@ -908,7 +1268,6 @@ document.querySelectorAll('.ab-speed-btn').forEach(function(btn){
       app.playing = true;
       playBtn.textContent = '⏸';
     } else {
-      /* 1x means realtime */
       app.realtime = true;
       liveBtn.classList.add('active');
       app.playing = true;
@@ -979,7 +1338,7 @@ document.querySelectorAll('.ab-accordion-btn').forEach(function(b){
    SHARE
    ═══════════════════════════════════════ */
 function getReferrerUrl() {
-  const p = new URLSearchParams(window.location.search);
+  var p = new URLSearchParams(window.location.search);
   return p.get('ref') || document.referrer || window.location.href;
 }
 
@@ -991,22 +1350,19 @@ async function shareResult() {
     + '\n\n👇 아래 링크에서 해시계 체험해보기\n'
     + '🔗 ' + ref;
 
-  // 1) Web Share API 시도
   if (navigator.share) {
     try {
       await navigator.share({
         title: '앙부일구 시뮬레이터',
         text: txt,
-        url: ref // URL을 별도 필드로 분리하는 것이 더 안정적입니다.
+        url: ref
       });
-      return; // 성공 시 종료
+      return;
     } catch (e) {
       console.log('Web Share 실패:', e.name);
-      // 'NotAllowedError'가 발생하면 권한 문제(allow 속성)입니다.
     }
   }
 
-  // 2) Clipboard API 시도 (Web Share가 안될 경우 폴백)
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(txt);
@@ -1017,12 +1373,11 @@ async function shareResult() {
     console.log('클립보드 API 실패');
   }
 
-  // 3) 구형 방식 폴백
-  const ta = document.createElement('textarea');
+  var ta = document.createElement('textarea');
   ta.value = txt;
   document.body.appendChild(ta);
   ta.select();
-  const success = document.execCommand('copy');
+  var success = document.execCommand('copy');
   document.body.removeChild(ta);
   
   if (success) alert('📋 클립보드에 복사되었습니다!');
@@ -1050,16 +1405,11 @@ function lerp(a, b, t){ return a + (b - a) * t; }
    ═══════════════════════════════════════ */
 function init(){
   initThree();
-
-  /* Set initial date picker */
   datePicker.value = fmtDate(app.time);
-
-  /* Start animation */
   app.realtime = true;
   app.playing = true;
   liveBtn.classList.add('active');
   updateSpeedUI(1);
-
   requestAnimationFrame(animate);
 }
 
