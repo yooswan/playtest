@@ -1337,25 +1337,40 @@ document.querySelectorAll('.ab-accordion-btn').forEach(function(b){
 /* ═══════════════════════════════════════
    SHARE
    ═══════════════════════════════════════ */
+var IS_APP = typeof window.Capacitor !== 'undefined';
+var PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.swan2dev.angbuilgu';
+
 function getReferrerUrl() {
   var p = new URLSearchParams(window.location.search);
   return p.get('ref') || document.referrer || window.location.href;
 }
 
 async function shareResult() {
-  var ref = getReferrerUrl();
   var ji = getJishi(app.time);
-  var txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
-    + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
-    + '\n\n👇 아래 링크에서 해시계 체험해보기\n'
-    + '🔗 ' + ref;
+  var shareUrl, txt;
+
+  if (IS_APP) {
+    /* ── 앱 환경: Play Store 설치 유도 ── */
+    shareUrl = PLAY_STORE_URL;
+    txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
+      + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
+      + '\n\n📲 앱 설치하고 해시계 체험하기\n'
+      + '🔗 ' + shareUrl;
+  } else {
+    /* ── 웹 환경: 페이지 URL 공유 ── */
+    shareUrl = getReferrerUrl();
+    txt = '☀️ 앙부일구 시뮬레이터로 조선시대 해시계를 체험해보세요!\n'
+      + ji.n + '(' + ji.h + '時) — ' + fmtTime(app.time) + ' / ' + getKoreanSeason(app.time)
+      + '\n\n👇 아래 링크에서 해시계 체험해보기\n'
+      + '🔗 ' + shareUrl;
+  }
 
   if (navigator.share) {
     try {
       await navigator.share({
         title: '앙부일구 시뮬레이터',
         text: txt,
-        url: ref
+        url: shareUrl
       });
       return;
     } catch (e) {
@@ -1379,7 +1394,7 @@ async function shareResult() {
   ta.select();
   var success = document.execCommand('copy');
   document.body.removeChild(ta);
-  
+
   if (success) alert('📋 클립보드에 복사되었습니다!');
   else alert('공유 기능을 사용할 수 없는 환경입니다.');
 }
