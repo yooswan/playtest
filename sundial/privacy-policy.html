@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인정보처리방침 · 앙부일구</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1208;
+      --ink-light: #4a3f2f;
+      --paper: #f5f0e8;
+      --paper-dark: #e8e0cf;
+      --accent: #8b4513;
+      --accent-light: #c47a3a;
+      --border: #c8b89a;
+      --sun: #d4821a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(139,69,19,0.04) 28px, rgba(139,69,19,0.04) 29px),
+        repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(139,69,19,0.03) 28px, rgba(139,69,19,0.03) 29px);
+      color: var(--ink);
+      font-family: 'Noto Serif KR', serif;
+      line-height: 1.9;
+      min-height: 100vh;
+    }
+
+    .page-wrapper {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 60px 28px 80px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding-bottom: 40px;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 48px;
+      position: relative;
+    }
+
+    .sun-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 16px;
+      display: block;
+    }
+
+    header h1 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    header .app-name {
+      font-size: 1.05rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      font-weight: 300;
+    }
+
+    header .date {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: var(--ink-light);
+      font-family: 'Noto Serif', serif;
+      font-style: italic;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 44px;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeUp 0.5s ease forwards;
+    }
+    .section:nth-child(1) { animation-delay: 0.05s; }
+    .section:nth-child(2) { animation-delay: 0.12s; }
+    .section:nth-child(3) { animation-delay: 0.19s; }
+    .section:nth-child(4) { animation-delay: 0.26s; }
+    .section:nth-child(5) { animation-delay: 0.33s; }
+    .section:nth-child(6) { animation-delay: 0.40s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-num {
+      display: inline-block;
+      font-family: 'Noto Serif', serif;
+      font-size: 0.72rem;
+      color: var(--accent-light);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 1.08rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    p {
+      font-size: 0.93rem;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+    }
+
+    .en {
+      font-family: 'Noto Serif', serif;
+      font-size: 0.83rem;
+      color: #9a8870;
+      font-style: italic;
+      border-left: 2px solid var(--border);
+      padding-left: 12px;
+      margin-top: 8px;
+      line-height: 1.7;
+    }
+
+    .highlight-box {
+      background: var(--paper-dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin: 12px 0;
+    }
+
+    .highlight-box p {
+      margin-bottom: 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.8rem;
+      color: #a89880;
+      font-family: 'Noto Serif', serif;
+    }
+
+    @media (max-width: 480px) {
+      .page-wrapper { padding: 40px 20px 60px; }
+      header h1 { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <header>
+    <!-- 앙부일구 해시계 아이콘 (SVG) -->
+    <svg class="sun-icon" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="26" cy="26" r="12" fill="#d4821a" opacity="0.9"/>
+      <circle cx="26" cy="26" r="8" fill="#f5c060" opacity="0.85"/>
+      <!-- 시침선들 -->
+      <line x1="26" y1="4" x2="26" y2="14" stroke="#8b4513" stroke-width="2" stroke-linecap="round"/>
+      <line x1="26" y1="38" x2="26" y2="48" stroke="#8b4513" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4" y1="26" x2="14" y2="26" stroke="#8b4513" stroke-width="2" stroke-linecap="round"/>
+      <line x1="38" y1="26" x2="48" y2="26" stroke="#8b4513" stroke-width="2" stroke-linecap="round"/>
+      <line x1="10" y1="10" x2="17" y2="17" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="35" y1="35" x2="42" y2="42" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="42" y1="10" x2="35" y2="17" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="17" y1="35" x2="10" y2="42" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <h1>개인정보처리방침</h1>
+    <div class="app-name">앙부일구 · Angbuilgu Sundial</div>
+    <div class="date">시행일 / Effective Date: 2026년 3월 17일</div>
+  </header>
+
+  <div class="section">
+    <span class="section-num">Article 1</span>
+    <h2>개요 · Overview</h2>
+    <p>
+      본 앱 <strong>앙부일구(Angbuilgu)</strong>는 조선시대 해시계를 현대적으로 재현한 교육용 시뮬레이터입니다.
+      개발자는 이용자의 개인정보 보호를 중요하게 여기며, 본 방침을 통해 수집·이용 현황을 안내합니다.
+    </p>
+    <div class="en">
+      Angbuilgu is an educational sundial simulator inspired by the Joseon-era timepiece.
+      This Privacy Policy explains how the developer handles your information.
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-num">Article 2</span>
+    <h2>수집하는 정보 · Information We Collect</h2>
+    <div class="highlight-box">
+      <p>✦ 본 앱은 <strong>사용자 개인정보를 직접 수집하지 않습니다.</strong></p>
+      <p style="margin-top:6px; font-size:0.83rem; color:#9a8870; font-style:italic;">
+        This app does not directly collect any personal information from users.
+      </p>
+    </div>
+    <p>
+      단, 광고 서비스 제공을 위해 Google AdMob이 광고 식별자(광고 ID) 등 제한적인 데이터를 자동으로 처리할 수 있습니다.
+    </p>
+    <div class="en">
+      However, Google AdMob (our ad provider) may automatically process limited data such as advertising identifiers to serve ads.
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-num">Article 3</span>
+    <h2>제3자 광고 서비스 · Third-Party Advertising</h2>
+    <p>
+      본 앱은 <strong>Google AdMob</strong>을 통해 광고를 제공합니다.
+      AdMob은 광고 개인화, 사기 방지, 분석 목적으로 기기 정보 및 광고 ID를 처리할 수 있습니다.
+    </p>
+    <div class="en">
+      This app uses Google AdMob to display advertisements. AdMob may collect device information and advertising identifiers for ad personalization, fraud prevention, and analytics.
+    </div>
+    <p style="margin-top: 14px;">
+      Google의 개인정보 보호정책 전문은 아래에서 확인하실 수 있습니다.<br>
+      <a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a>
+    </p>
+    <p>
+      AdMob 파트너 정책:<br>
+      <a href="https://support.google.com/admob/answer/6128543" target="_blank">https://support.google.com/admob/answer/6128543</a>
+    </p>
+  </div>
+
+  <div class="section">
+    <span class="section-num">Article 4</span>
+    <h2>정보의 이용 목적 · Purpose of Use</h2>
+    <p>수집된 데이터는 다음 목적으로만 사용됩니다:</p>
+    <ul style="margin: 8px 0 8px 20px; font-size:0.93rem; color:var(--ink-light); line-height: 2;">
+      <li>앱 내 광고 표시</li>
+      <li>광고 서비스 개선 및 사기 방지 (AdMob 처리 범위 내)</li>
+    </ul>
+    <div class="en">
+      Collected data is used solely for: displaying in-app advertisements, and improving ad services / fraud prevention (within the scope of AdMob processing).
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-num">Article 5</span>
+    <h2>아동 개인정보 보호 · Children's Privacy</h2>
+    <p>
+      본 앱은 13세 미만 아동으로부터 의도적으로 개인정보를 수집하지 않습니다.
+      아동의 정보가 수집되었다고 판단되시면 아래 연락처로 알려주시기 바랍니다.
+    </p>
+    <div class="en">
+      This app does not knowingly collect personal information from children under 13. If you believe a child's information has been collected, please contact us.
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-num">Article 6</span>
+    <h2>문의 · Contact</h2>
+    <p>개인정보 처리에 관한 문의사항은 아래로 연락주시기 바랍니다.</p>
+    <div class="highlight-box">
+      <p>이메일 · Email: <a href="mailto:swan2dev@gmail.com">swan2dev@gmail.com</a></p>
+    </div>
+    <div class="en">
+      For any privacy-related inquiries, please contact us via email above.
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 swan2dev · 앙부일구 Angbuilgu Sundial</p>
+    <p style="margin-top: 6px;">본 방침은 사전 통지 없이 변경될 수 있으며, 변경 시 앱 내 또는 본 페이지를 통해 공지합니다.</p>
+    <p style="margin-top: 4px; font-size: 0.74rem;">This policy may be updated. Changes will be posted on this page.</p>
+  </footer>
+
+</div>
+</body>
+</html>
